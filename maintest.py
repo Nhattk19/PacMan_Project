@@ -31,17 +31,17 @@ levels = [boards, boards, boards, boards, boards, boards]  # Để trống, bạ
 player_x = 450
 player_y = 663
 direction = 0  # Hướng ban đầu của Pac-Man (0 = phải, 1 = trái, 2 = lên, 3 = xuống)
-redGhost_x = 56
-redGhost_y = 58
+redGhost_x = 50
+redGhost_y = 45
 redGhost_direction = 0
-blueGhost_x = 800
-blueGhost_y = 58
+blueGhost_x = 802
+blueGhost_y = 45
 blueGhost_direction = 0
-pinkGhost_x = 56
-pinkGhost_y = 820
+pinkGhost_x = 50
+pinkGhost_y = 829
 pinkGhost_direction = 2
-orangeGhost_x = 800
-orangeGhost_y = 798
+orangeGhost_x = 802
+orangeGhost_y = 829
 orangeGhost_direction = 2
 counter = 0  # Để thay đổi animation của Pac-Man
 flicker = False  # Biến boolean để bật/tắt hiệu ứng nhấp nháy của điểm lớn
@@ -825,7 +825,7 @@ def get_targets(redGhost_x, redGhost_y, pinkGhost_x, pinkGhost_y, blueGhost_x, b
         return [(0, 0), (0, 0), (player_x, player_y), (0, 0)]
     elif current_level == 3:  # Level 4: Chỉ orangeGhost hoạt động
         return [(0, 0), (0, 0), (0, 0), (player_x, player_y)]
-    else:
+    else  :
         if player_x < 450:
             runaway_x = 900
         else:
@@ -987,17 +987,16 @@ def move_characters():
         if current_level == 0:  # Level 1: Chỉ redGhost di chuyển
             if not redGhost_dead and not redGhost.in_box:
                 redGhost_x, redGhost_y, redGhost_direction = redGhost.move_redGhost()
-        if current_level == 1:  # Level 2: Chỉ pinkGhost di chuyển
+        elif current_level == 1:  # Level 2: Chỉ pinkGhost di chuyển
             if not pinkGhost_dead and not pinkGhost.in_box:
                 pinkGhost_x, pinkGhost_y, pinkGhost_direction = pinkGhost.move_pinkGhost()    
-        if current_level == 2:  # Level 3: Chỉ blueGhost di chuyển
+        elif current_level == 2:  # Level 3: Chỉ blueGhost di chuyển
             if not blueGhost_dead and not blueGhost.in_box:
                 blueGhost_x, blueGhost_y, blueGhost_direction = blueGhost.move_blueGhost()
-        if current_level == 3:  # Level 4: Chỉ orangeGhost di chuyển
+        elif current_level == 3:  # Level 4: Chỉ orangeGhost di chuyển
             if not orangeGhost_dead and not orangeGhost.in_box:
-                orangeGhost_x, orangeGhost_y, orangeGhost_direction = orangeGhost.move_redGhost()
-                
-        else:  # Các level khác: Tất cả ghost di chuyển
+                orangeGhost_x, orangeGhost_y, orangeGhost_direction = orangeGhost.move_orangeGhost()            
+        elif current_level > 3: # Các level khác: Tất cả ghost di chuyển
             if not redGhost_dead and not redGhost.in_box:
                 redGhost_x, redGhost_y, redGhost_direction = redGhost.move_redGhost()
             if not pinkGhost_dead and not pinkGhost.in_box:
@@ -1006,6 +1005,7 @@ def move_characters():
                 blueGhost_x, blueGhost_y, blueGhost_direction = blueGhost.move_blueGhost()
             if not orangeGhost_dead and not orangeGhost.in_box:
                 orangeGhost_x, orangeGhost_y, orangeGhost_direction = orangeGhost.move_orangeGhost()
+        print(orangeGhost_x, orangeGhost_y,redGhost_x, redGhost_y,pinkGhost_x, pinkGhost_y, blueGhost_x, blueGhost_y)
 
 # Xử lý khi Pac-Man ăn điểm nhỏ hoặc lớn
 def handle_point_collisions():
@@ -1025,17 +1025,17 @@ def reset_game_state():
     player_y = 663
     direction = 0
     direction_command = 0
-    redGhost_x = 56
-    redGhost_y = 58
+    redGhost_x = 50
+    redGhost_y = 45
     redGhost_direction = 0
-    blueGhost_x = 800
-    blueGhost_y = 58
+    blueGhost_x = 802
+    blueGhost_y = 45
     blueGhost_direction = 2
-    pinkGhost_x = 56
-    pinkGhost_y = 820
+    pinkGhost_x = 50
+    pinkGhost_y = 829
     pinkGhost_direction = 2
-    orangeGhost_x = 800
-    orangeGhost_y = 798
+    orangeGhost_x = 802
+    orangeGhost_y = 829
     orangeGhost_direction = 2
     eaten_ghost = [False, False, False, False]
     redGhost_dead = False
@@ -1138,17 +1138,17 @@ def handle_events():
                 player_y = 663
                 direction = 0
                 direction_command = 0
-                redGhost_x = 56
-                redGhost_y = 58
+                redGhost_x = 50
+                redGhost_y = 45
                 redGhost_direction = 0
-                blueGhost_x = 800
-                blueGhost_y = 58
+                blueGhost_x = 802
+                blueGhost_y = 45
                 blueGhost_direction = 2
-                pinkGhost_x = 56
-                pinkGhost_y = 820
+                pinkGhost_x = 50
+                pinkGhost_y = 829
                 pinkGhost_direction = 2
-                orangeGhost_x = 800
-                orangeGhost_y = 798
+                orangeGhost_x = 802
+                orangeGhost_y = 829
                 orangeGhost_direction = 2
                 eaten_ghost = [False, False, False, False]
                 redGhost_dead = False
@@ -1172,7 +1172,7 @@ def handle_events():
 # Cập nhật hướng của Pac-Man dựa trên phím nhấn và hướng được phép
 def update_player_direction():
     global direction
-    if current_level == 5:  # Chỉ cập nhật hướng ở level Level 6
+    if current_level == 5:  # Chỉ cập nhật hướng ở Level 6
         if direction_command == 0 and turns_allowed[0]:
             direction = 0
         if direction_command == 1 and turns_allowed[1]:
@@ -1253,11 +1253,10 @@ while run:
     
     # Vẽ các thành phần và tính toán center_x, center_y
     draw_game_elements()
-    
     # Tạo các đối tượng ghost với targets ban đầu
     redGhost = Ghost(redGhost_x, redGhost_y, targets[0], ghost_speeds[0], redGhost_img, redGhost_direction, redGhost_dead, redGhost_box, 0)
-    blueGhost = Ghost(blueGhost_x, blueGhost_y, targets[1], ghost_speeds[1], blueGhost_img, blueGhost_direction, blueGhost_dead, blueGhost_box, 1)
-    pinkGhost = Ghost(pinkGhost_x, pinkGhost_y, targets[2], ghost_speeds[2], pinkGhost_img, pinkGhost_direction, pinkGhost_dead, pinkGhost_box, 2)
+    blueGhost = Ghost(blueGhost_x, blueGhost_y, targets[1], ghost_speeds[1], blueGhost_img, blueGhost_direction, blueGhost_dead, blueGhost_box, 2)
+    pinkGhost = Ghost(pinkGhost_x, pinkGhost_y, targets[2], ghost_speeds[2], pinkGhost_img, pinkGhost_direction, pinkGhost_dead, pinkGhost_box, 1)
     orangeGhost = Ghost(orangeGhost_x, orangeGhost_y, targets[3], ghost_speeds[3], orangeGhost_img, orangeGhost_direction, orangeGhost_dead, orangeGhost_box, 3)
     
     # Cập nhật targets sau khi tạo ghost
