@@ -7,7 +7,7 @@ import math
 pygame.init()
 
 WIDTH = 900
-HEIGHT = 950
+HEIGHT = 946
 screen = pygame.display.set_mode([WIDTH, HEIGHT])  # Tạo ra cửa sổ trò chơi
 timer = pygame.time.Clock()  # Đối tượng đồng hồ để kiểm soát khung hình
 fps = 60
@@ -122,14 +122,14 @@ class Ghost:
                 self.turns[2] = True
 
             if self.direction == 2 or self.direction == 3:
-                if 12 <= self.center_x % num2 <= 18:
+                if 10 <= self.center_x % num2 <= 20:
                     if level[(self.center_y + num3) // num1][self.center_x // num2] < 3 \
                             or (level[(self.center_y + num3) // num1][self.center_x // num2] == 9 and (self.in_box or self.dead)):
                         self.turns[3] = True
                     if level[(self.center_y - num3) // num1][self.center_x // num2] < 3 \
                             or (level[(self.center_y - num3) // num1][self.center_x // num2] == 9 and (self.in_box or self.dead)):
                         self.turns[2] = True
-                if 12 <= self.center_y % num1 <= 18:
+                if 10 <= self.center_y % num1 <= 20:
                     if level[self.center_y // num1][(self.center_x - num2) // num2] < 3 \
                             or (level[self.center_y // num1][(self.center_x - num2) // num2] == 9 and (self.in_box or self.dead)):
                         self.turns[1] = True
@@ -138,14 +138,14 @@ class Ghost:
                         self.turns[0] = True
 
             if self.direction == 0 or self.direction == 1:
-                if 12 <= self.center_x % num2 <= 18:
+                if 10 <= self.center_x % num2 <= 20:
                     if level[(self.center_y + num3) // num1][self.center_x // num2] < 3 \
                             or (level[(self.center_y + num3) // num1][self.center_x // num2] == 9 and (self.in_box or self.dead)):
                         self.turns[3] = True
                     if level[(self.center_y - num3) // num1][self.center_x // num2] < 3 \
                             or (level[(self.center_y - num3) // num1][self.center_x // num2] == 9 and (self.in_box or self.dead)):
                         self.turns[2] = True
-                if 12 <= self.center_y % num1 <= 18:
+                if 10 <= self.center_y % num1 <= 20:
                     if level[self.center_y // num1][(self.center_x - num3) // num2] < 3 \
                             or (level[self.center_y // num1][(self.center_x - num3) // num2] == 9 and (self.in_box or self.dead)):
                         self.turns[1] = True
@@ -687,44 +687,53 @@ def check_collisions(scor, power, power_count, eaten_ghosts):
 def draw_board():
     num1 = ((HEIGHT - 50) // 32)
     num2 = (WIDTH // 30)
-    for i in range(len(level)):  # 0 đến 32
-        for j in range(len(level[i])):  # 0 đến 29
-            # Vẽ điểm nhỏ
+    for i in range(len(level)):
+        for j in range(len(level[i])):
             if level[i][j] == 1:
                 pygame.draw.circle(screen, 'white', (j * num2 + (0.5 * num2), i * num1 + (0.5 * num1)), 4)
-            # Vẽ điểm lớn
             if level[i][j] == 2 and not flicker:
                 pygame.draw.circle(screen, 'white', (j * num2 + (0.5 * num2), i * num1 + (0.5 * num1)), 10)
-            # Vẽ tường dọc
             if level[i][j] == 3:
                 pygame.draw.line(screen, color, (j * num2 + (0.5 * num2), i * num1),
                                  (j * num2 + (0.5 * num2), i * num1 + num1), 3)
-            # Vẽ tường ngang
             if level[i][j] == 4:
                 pygame.draw.line(screen, color, (j * num2, i * num1 + (0.5 * num1)),
                                  (j * num2 + num2, i * num1 + (0.5 * num1)), 3)
-            # Nối tường ngang (từ trái sang) với tường dọc (đi xuống)
             if level[i][j] == 5:
                 pygame.draw.arc(screen, color, [(j * num2 - (num2 * 0.4)) - 2, (i * num1 + (0.5 * num1)), num2, num1],
                                 0, PI / 2, 3)
-            # Nối tường dọc (đi lên) với tường ngang (sang phải)
             if level[i][j] == 6:
                 pygame.draw.arc(screen, color,
                                 [(j * num2 + (num2 * 0.5)), (i * num1 + (0.5 * num1)), num2, num1], PI / 2, PI, 3)
-            # Nối tường ngang (sang phải) với tường dọc (đi lên)
             if level[i][j] == 7:
                 pygame.draw.arc(screen, color, [(j * num2 + (num2 * 0.5)), (i * num1 - (0.4 * num1)), num2, num1], PI,
                                 3 * PI / 2, 3)
-            # Nối tường dọc (đi xuống) với tường ngang (sang trái)
             if level[i][j] == 8:
                 pygame.draw.arc(screen, color,
                                 [(j * num2 - (num2 * 0.4)) - 2, (i * num1 - (0.4 * num1)), num2, num1], 3 * PI / 2,
                                 2 * PI, 3)
-            # Vẽ đường thẳng ngang màu trắng
             if level[i][j] == 9:
                 pygame.draw.line(screen, 'white', (j * num2, i * num1 + (0.5 * num1)),
                                  (j * num2 + num2, i * num1 + (0.5 * num1)), 3)
-
+            if level[i][j] == 13:
+                pygame.draw.line(screen, 'yellow', (j * num2 + (0.5 * num2), i * num1),
+                                 (j * num2 + (0.5 * num2), i * num1 + num1), 3)
+            if level[i][j] == 14:
+                pygame.draw.line(screen, 'yellow', (j * num2, i * num1 + (0.5 * num1)),
+                                 (j * num2 + num2, i * num1 + (0.5 * num1)), 3)
+            if level[i][j] == 15:
+                pygame.draw.arc(screen, 'yellow', [(j * num2 - (num2 * 0.4)) - 2, (i * num1 + (0.5 * num1)), num2, num1],
+                                0, PI / 2, 3)
+            if level[i][j] == 16:
+                pygame.draw.arc(screen, 'yellow',
+                                [(j * num2 + (num2 * 0.5)), (i * num1 + (0.5 * num1)), num2, num1], PI / 2, PI, 3)
+            if level[i][j] == 17:
+                pygame.draw.arc(screen, 'yellow', [(j * num2 + (num2 * 0.5)), (i * num1 - (0.4 * num1)), num2, num1], PI,
+                                3 * PI / 2, 3)
+            if level[i][j] == 18:
+                pygame.draw.arc(screen, 'yellow',
+                                [(j * num2 - (num2 * 0.4)) - 2, (i * num1 - (0.4 * num1)), num2, num1], 3 * PI / 2,
+                                2 * PI, 3)
 # Vẽ Pac-Man với các animation khác nhau
 def draw_player():
     # 0-RIGHT, 1-LEFT, 2-UP, 3-DOWN
@@ -758,23 +767,23 @@ def check_position(centerx, centery):
                 turns[2] = True
 
         if direction == 2 or direction == 3:
-            if 12 <= centerx % num2 <= 18:
+            if 10 <= centerx % num2 <= 20:
                 if level[(centery + num3) // num1][centerx // num2] < 3:
                     turns[3] = True
                 if level[(centery - num3) // num1][centerx // num2] < 3:
                     turns[2] = True
-            if 12 <= centery % num1 <= 18:
+            if 10 <= centery % num1 <= 20:
                 if level[centery // num1][(centerx - num2) // num2] < 3:
                     turns[1] = True
                 if level[centery // num1][(centerx + num2) // num2] < 3:
                     turns[0] = True
         if direction == 0 or direction == 1:
-            if 12 <= centerx % num2 <= 18:
+            if 10 <= centerx % num2 <= 20:
                 if level[(centery + num1) // num1][centerx // num2] < 3:
                     turns[3] = True
                 if level[(centery - num1) // num1][centerx // num2] < 3:
                     turns[2] = True
-            if 12 <= centery % num1 <= 18:
+            if 10 <= centery % num1 <= 20:
                 if level[centery // num1][(centerx - num3) // num2] < 3:
                     turns[1] = True
                 if level[centery // num1][(centerx + num3) // num2] < 3:
