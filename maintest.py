@@ -33,7 +33,7 @@ player_y = 663
 direction = 0  # Hướng ban đầu của Pac-Man (0 = phải, 1 = trái, 2 = lên, 3 = xuống)
 redGhost_x = 50
 redGhost_y = 45
-redGhost_direction = 0
+redGhost_direction = 1
 blueGhost_x = 802
 blueGhost_y = 45
 blueGhost_direction = 0
@@ -58,10 +58,6 @@ redGhost_dead = False
 blueGhost_dead = False
 orangeGhost_dead = False
 pinkGhost_dead = False
-redGhost_box = False
-blueGhost_box = False
-orangeGhost_box = False
-pinkGhost_box = False
 moving = False  # Trạng thái di chuyển của Pac-Man và ghost, ban đầu là dừng (do có giai đoạn khởi động)
 ghost_speeds = [2, 2, 2, 2]
 startup_counter = 0  # Đếm frame cho giai đoạn khởi động (180 frame đầu tiên)
@@ -71,7 +67,7 @@ game_won = False
 current_level = 0  # Theo dõi level hiện tại
 
 class Ghost:
-    def __init__(self, x_coord, y_coord, target, speed, img, direct, dead, box, id):
+    def __init__(self, x_coord, y_coord, target, speed, img, direct, dead, id):
         self.x_pos = x_coord
         self.y_pos = y_coord
         self.center_x = self.x_pos + 22  # Tọa độ tâm của ghost
@@ -81,9 +77,8 @@ class Ghost:
         self.img = img
         self.direction = direct
         self.dead = dead
-        self.in_box = box
         self.id = id
-        self.turns, self.in_box = self.check_collisions()  # Kết quả từ check_collisions()
+        self.turns = self.check_collisions()  # Kết quả từ check_collisions()
         self.rect = self.draw()  # Hình chữ nhật bao quanh ghost, dùng để kiểm tra va chạm
 
     def draw(self):
@@ -116,57 +111,53 @@ class Ghost:
             if level[(self.center_y - num3) // num1][self.center_x // num2] == 9:
                 self.turns[2] = True
             if level[self.center_y // num1][(self.center_x - num3) // num2] < 3 \
-                    or (level[self.center_y // num1][(self.center_x - num3) // num2] == 9 and (self.in_box or self.dead)):
+                    or (level[self.center_y // num1][(self.center_x - num3) // num2] == 9 and self.dead):
                 self.turns[1] = True
             if level[self.center_y // num1][(self.center_x + num3) // num2] < 3 \
-                    or (level[self.center_y // num1][(self.center_x + num3) // num2] == 9 and (self.in_box or self.dead)):
+                    or (level[self.center_y // num1][(self.center_x + num3) // num2] == 9 and self.dead):
                 self.turns[0] = True
             if level[(self.center_y + num3) // num1][self.center_x // num2] < 3 \
-                    or (level[(self.center_y + num3) // num1][self.center_x // num2] == 9 and (self.in_box or self.dead)):
+                    or (level[(self.center_y + num3) // num1][self.center_x // num2] == 9 and self.dead):
                 self.turns[3] = True
             if level[(self.center_y - num3) // num1][self.center_x // num2] < 3 \
-                    or (level[(self.center_y - num3) // num1][self.center_x // num2] == 9 and (self.in_box or self.dead)):
+                    or (level[(self.center_y - num3) // num1][self.center_x // num2] == 9 and self.dead):
                 self.turns[2] = True
 
             if self.direction == 2 or self.direction == 3:
                 if 12 <= self.center_x % num2 <= 18:
                     if level[(self.center_y + num3) // num1][self.center_x // num2] < 3 \
-                            or (level[(self.center_y + num3) // num1][self.center_x // num2] == 9 and (self.in_box or self.dead)):
+                            or (level[(self.center_y + num3) // num1][self.center_x // num2] == 9 and self.dead):
                         self.turns[3] = True
                     if level[(self.center_y - num3) // num1][self.center_x // num2] < 3 \
-                            or (level[(self.center_y - num3) // num1][self.center_x // num2] == 9 and (self.in_box or self.dead)):
+                            or (level[(self.center_y - num3) // num1][self.center_x // num2] == 9 and self.dead):
                         self.turns[2] = True
                 if 12 <= self.center_y % num1 <= 18:
                     if level[self.center_y // num1][(self.center_x - num2) // num2] < 3 \
-                            or (level[self.center_y // num1][(self.center_x - num2) // num2] == 9 and (self.in_box or self.dead)):
+                            or (level[self.center_y // num1][(self.center_x - num2) // num2] == 9 and self.dead):
                         self.turns[1] = True
                     if level[self.center_y // num1][(self.center_x + num2) // num2] < 3 \
-                            or (level[self.center_y // num1][(self.center_x + num2) // num2] == 9 and (self.in_box or self.dead)):
+                            or (level[self.center_y // num1][(self.center_x + num2) // num2] == 9 and self.dead):
                         self.turns[0] = True
 
             if self.direction == 0 or self.direction == 1:
                 if 12 <= self.center_x % num2 <= 18:
                     if level[(self.center_y + num3) // num1][self.center_x // num2] < 3 \
-                            or (level[(self.center_y + num3) // num1][self.center_x // num2] == 9 and (self.in_box or self.dead)):
+                            or (level[(self.center_y + num3) // num1][self.center_x // num2] == 9 and self.dead):
                         self.turns[3] = True
                     if level[(self.center_y - num3) // num1][self.center_x // num2] < 3 \
-                            or (level[(self.center_y - num3) // num1][self.center_x // num2] == 9 and (self.in_box or self.dead)):
+                            or (level[(self.center_y - num3) // num1][self.center_x // num2] == 9 and self.dead):
                         self.turns[2] = True
                 if 12 <= self.center_y % num1 <= 18:
                     if level[self.center_y // num1][(self.center_x - num3) // num2] < 3 \
-                            or (level[self.center_y // num1][(self.center_x - num3) // num2] == 9 and (self.in_box or self.dead)):
+                            or (level[self.center_y // num1][(self.center_x - num3) // num2] == 9 and self.dead):
                         self.turns[1] = True
                     if level[self.center_y // num1][(self.center_x + num3) // num2] < 3 \
-                            or (level[self.center_y // num1][(self.center_x + num3) // num2] == 9 and (self.in_box or self.dead)):
+                            or (level[self.center_y // num1][(self.center_x + num3) // num2] == 9 and self.dead):
                         self.turns[0] = True
         else:
             self.turns[0] = True
             self.turns[1] = True
-        if 350 < self.x_pos < 550 and 370 < self.y_pos < 480:
-            self.in_box = True
-        else:
-            self.in_box = False
-        return self.turns, self.in_box
+        return self.turns
 
     def move_orangeGhost(self):
         # r, l, u, d
@@ -985,25 +976,25 @@ def move_characters():
     if moving:
         player_x, player_y = move_player(player_x, player_y)
         if current_level == 0:  # Level 1: Chỉ redGhost di chuyển
-            if not redGhost_dead and not redGhost.in_box:
+            if not redGhost_dead :
                 redGhost_x, redGhost_y, redGhost_direction = redGhost.move_redGhost()
         elif current_level == 1:  # Level 2: Chỉ pinkGhost di chuyển
-            if not pinkGhost_dead and not pinkGhost.in_box:
+            if not pinkGhost_dead :
                 pinkGhost_x, pinkGhost_y, pinkGhost_direction = pinkGhost.move_pinkGhost()    
         elif current_level == 2:  # Level 3: Chỉ blueGhost di chuyển
-            if not blueGhost_dead and not blueGhost.in_box:
+            if not blueGhost_dead :
                 blueGhost_x, blueGhost_y, blueGhost_direction = blueGhost.move_blueGhost()
         elif current_level == 3:  # Level 4: Chỉ orangeGhost di chuyển
-            if not orangeGhost_dead and not orangeGhost.in_box:
+            if not orangeGhost_dead :
                 orangeGhost_x, orangeGhost_y, orangeGhost_direction = orangeGhost.move_orangeGhost()            
         elif current_level > 3: # Các level khác: Tất cả ghost di chuyển
-            if not redGhost_dead and not redGhost.in_box:
+            if not redGhost_dead :
                 redGhost_x, redGhost_y, redGhost_direction = redGhost.move_redGhost()
-            if not pinkGhost_dead and not pinkGhost.in_box:
+            if not pinkGhost_dead :
                 pinkGhost_x, pinkGhost_y, pinkGhost_direction = pinkGhost.move_pinkGhost()
-            if not blueGhost_dead and not blueGhost.in_box:
+            if not blueGhost_dead :
                 blueGhost_x, blueGhost_y, blueGhost_direction = blueGhost.move_blueGhost()
-            if not orangeGhost_dead and not orangeGhost.in_box:
+            if not orangeGhost_dead :
                 orangeGhost_x, orangeGhost_y, orangeGhost_direction = orangeGhost.move_orangeGhost()
         print(orangeGhost_x, orangeGhost_y,redGhost_x, redGhost_y,pinkGhost_x, pinkGhost_y, blueGhost_x, blueGhost_y)
 
@@ -1188,13 +1179,13 @@ def revive_ghosts():
     global redGhost_dead, blueGhost_dead, pinkGhost_dead, orangeGhost_dead
 
     if current_level == 5:  # Các ghost chỉ hồi sinh ở level 6
-        if blueGhost.in_box and blueGhost_dead:
+        if blueGhost_dead:
             blueGhost_dead = False
-        if pinkGhost.in_box and pinkGhost_dead:
+        if pinkGhost_dead:
             pinkGhost_dead = False
-        if orangeGhost.in_box and orangeGhost_dead:
+        if orangeGhost_dead:
             orangeGhost_dead = False
-        if redGhost.in_box and redGhost_dead:
+        if redGhost_dead:
             redGhost_dead = False
 
 def update_display():
@@ -1254,10 +1245,10 @@ while run:
     # Vẽ các thành phần và tính toán center_x, center_y
     draw_game_elements()
     # Tạo các đối tượng ghost với targets ban đầu
-    redGhost = Ghost(redGhost_x, redGhost_y, targets[0], ghost_speeds[0], redGhost_img, redGhost_direction, redGhost_dead, redGhost_box, 0)
-    blueGhost = Ghost(blueGhost_x, blueGhost_y, targets[1], ghost_speeds[1], blueGhost_img, blueGhost_direction, blueGhost_dead, blueGhost_box, 2)
-    pinkGhost = Ghost(pinkGhost_x, pinkGhost_y, targets[2], ghost_speeds[2], pinkGhost_img, pinkGhost_direction, pinkGhost_dead, pinkGhost_box, 1)
-    orangeGhost = Ghost(orangeGhost_x, orangeGhost_y, targets[3], ghost_speeds[3], orangeGhost_img, orangeGhost_direction, orangeGhost_dead, orangeGhost_box, 3)
+    redGhost = Ghost(redGhost_x, redGhost_y, targets[0], ghost_speeds[0], redGhost_img, redGhost_direction, redGhost_dead, 0)
+    blueGhost = Ghost(blueGhost_x, blueGhost_y, targets[1], ghost_speeds[1], blueGhost_img, blueGhost_direction, blueGhost_dead, 2)
+    pinkGhost = Ghost(pinkGhost_x, pinkGhost_y, targets[2], ghost_speeds[2], pinkGhost_img, pinkGhost_direction, pinkGhost_dead, 1)
+    orangeGhost = Ghost(orangeGhost_x, orangeGhost_y, targets[3], ghost_speeds[3], orangeGhost_img, orangeGhost_direction, orangeGhost_dead, 3)
     
     # Cập nhật targets sau khi tạo ghost
     targets = get_targets(redGhost_x, redGhost_y, blueGhost_x, blueGhost_y, pinkGhost_x, pinkGhost_y, orangeGhost_x, orangeGhost_y)
