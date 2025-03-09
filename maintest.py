@@ -18,10 +18,10 @@ PI = math.pi  # Dùng để vẽ các đường cong
 player_images = []  # Danh sách rỗng lưu các hình ảnh player
 for i in range(1, 5):  # Lặp từ 1 đến 4 để tải các hoạt động của Pac-Man
     player_images.append(pygame.transform.scale(pygame.image.load(f'assets/player_images/{i}.png'), (45, 45)))
-blinky_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/red.png'), (45, 45))  # Màu đỏ
-pinky_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/pink.png'), (45, 45))  # Màu hồng
-inky_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/blue.png'), (45, 45))  # Xanh dương
-clyde_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/orange.png'), (45, 45))  # Cam
+redGhost_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/red.png'), (45, 45))  # Màu đỏ
+pinkGhost_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/pink.png'), (45, 45))  # Màu hồng
+blueGhost_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/blue.png'), (45, 45))  # Xanh dương
+orangeGhost_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/orange.png'), (45, 45))  # Cam
 spooked_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/powerup.png'), (45, 45))  # Sợ hãi
 dead_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/dead.png'), (45, 45))
 
@@ -29,20 +29,20 @@ dead_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/dead.p
 levels = [boards, boards, boards, boards, boards, boards]  # Để trống, bạn sẽ điền sau (hiện dùng boards mặc định)
 
 player_x = 450
-player_y = 663
+player_y = 438
 direction = 0  # Hướng ban đầu của Pac-Man (0 = phải, 1 = trái, 2 = lên, 3 = xuống)
-blinky_x = 56
-blinky_y = 58
-blinky_direction = 0
-inky_x = 440
-inky_y = 388
-inky_direction = 2
-pinky_x = 440
-pinky_y = 438
-pinky_direction = 2
-clyde_x = 440
-clyde_y = 438
-clyde_direction = 2
+redGhost_x = 56
+redGhost_y = 58
+redGhost_direction = 0
+blueGhost_x = 800
+blueGhost_y = 58
+blueGhost_direction = 0
+pinkGhost_x = 56
+pinkGhost_y = 828
+pinkGhost_direction = 2
+orangeGhost_x = 800
+orangeGhost_y = 828
+orangeGhost_direction = 2
 counter = 0  # Để thay đổi animation của Pac-Man
 flicker = False  # Biến boolean để bật/tắt hiệu ứng nhấp nháy của điểm lớn
 # R, L, U, D
@@ -52,16 +52,16 @@ player_speed = 2
 score = 0
 powerup = False
 power_counter = 0  # Đếm số frame kể từ khi power-up được kích hoạt (tắt sau 600 frame)
-eaten_ghost = [False, False, False, False]  # Trạng thái của 4 ghost (Blinky, Inky, Pinky, Clyde) có bị ăn hay không
+eaten_ghost = [False, False, False, False]  # Trạng thái của 4 ghost (redGhost, blueGhost, pinkGhost, orangeGhost) có bị ăn hay không
 targets = [(player_x, player_y), (player_x, player_y), (player_x, player_y), (player_x, player_y)]  # Danh sách 4 tuple chứa tọa độ mục tiêu của từng ghost
-blinky_dead = False
-inky_dead = False
-clyde_dead = False
-pinky_dead = False
-blinky_box = False
-inky_box = False
-clyde_box = False
-pinky_box = False
+redGhost_dead = False
+blueGhost_dead = False
+orangeGhost_dead = False
+pinkGhost_dead = False
+redGhost_box = False
+blueGhost_box = False
+orangeGhost_box = False
+pinkGhost_box = False
 moving = False  # Trạng thái di chuyển của Pac-Man và ghost, ban đầu là dừng (do có giai đoạn khởi động)
 ghost_speeds = [2, 2, 2, 2]
 startup_counter = 0  # Đếm frame cho giai đoạn khởi động (180 frame đầu tiên)
@@ -87,7 +87,7 @@ class Ghost:
         self.rect = self.draw()  # Hình chữ nhật bao quanh ghost, dùng để kiểm tra va chạm
 
     def draw(self):
-        if current_level == 0 and self.id != 0:  # Chỉ vẽ Blinky ở Level 1
+        if current_level == 0 and self.id != 0:  # Chỉ vẽ redGhost ở Level 1
             return pygame.rect.Rect((self.center_x - 18, self.center_y - 18), (36, 36))
         if (not powerup and not self.dead) or (eaten_ghost[self.id] and powerup and not self.dead):
             screen.blit(self.img, (self.x_pos, self.y_pos))
@@ -122,14 +122,14 @@ class Ghost:
                 self.turns[2] = True
 
             if self.direction == 2 or self.direction == 3:
-                if 10 <= self.center_x % num2 <= 20:
+                if 12 <= self.center_x % num2 <= 18:
                     if level[(self.center_y + num3) // num1][self.center_x // num2] < 3 \
                             or (level[(self.center_y + num3) // num1][self.center_x // num2] == 9 and (self.in_box or self.dead)):
                         self.turns[3] = True
                     if level[(self.center_y - num3) // num1][self.center_x // num2] < 3 \
                             or (level[(self.center_y - num3) // num1][self.center_x // num2] == 9 and (self.in_box or self.dead)):
                         self.turns[2] = True
-                if 10 <= self.center_y % num1 <= 20:
+                if 12 <= self.center_y % num1 <= 18:
                     if level[self.center_y // num1][(self.center_x - num2) // num2] < 3 \
                             or (level[self.center_y // num1][(self.center_x - num2) // num2] == 9 and (self.in_box or self.dead)):
                         self.turns[1] = True
@@ -138,14 +138,14 @@ class Ghost:
                         self.turns[0] = True
 
             if self.direction == 0 or self.direction == 1:
-                if 10 <= self.center_x % num2 <= 20:
+                if 12 <= self.center_x % num2 <= 18:
                     if level[(self.center_y + num3) // num1][self.center_x // num2] < 3 \
                             or (level[(self.center_y + num3) // num1][self.center_x // num2] == 9 and (self.in_box or self.dead)):
                         self.turns[3] = True
                     if level[(self.center_y - num3) // num1][self.center_x // num2] < 3 \
                             or (level[(self.center_y - num3) // num1][self.center_x // num2] == 9 and (self.in_box or self.dead)):
                         self.turns[2] = True
-                if 10 <= self.center_y % num1 <= 20:
+                if 12 <= self.center_y % num1 <= 18:
                     if level[self.center_y // num1][(self.center_x - num3) // num2] < 3 \
                             or (level[self.center_y // num1][(self.center_x - num3) // num2] == 9 and (self.in_box or self.dead)):
                         self.turns[1] = True
@@ -161,7 +161,7 @@ class Ghost:
             self.in_box = False
         return self.turns, self.in_box
 
-    def move_clyde(self):
+    def move_orangeGhost(self):
         # r, l, u, d
         if self.direction == 0:
             if self.target[0] > self.x_pos and self.turns[0]:
@@ -299,7 +299,7 @@ class Ghost:
             self.x_pos -= 30
         return self.x_pos, self.y_pos, self.direction
 
-    def move_blinky(self):
+    def move_redGhost(self):
         # r, l, u, d
         if self.direction == 0:
             if self.target[0] > self.x_pos and self.turns[0]:
@@ -404,7 +404,7 @@ class Ghost:
             self.x_pos -= 30
         return self.x_pos, self.y_pos, self.direction
 
-    def move_inky(self):
+    def move_blueGhost(self):
         # r, l, u, d
         if self.direction == 0:
             if self.target[0] > self.x_pos and self.turns[0]:
@@ -525,7 +525,7 @@ class Ghost:
             self.x_pos -= 30
         return self.x_pos, self.y_pos, self.direction
 
-    def move_pinky(self):
+    def move_pinkGhost(self):
         # r, l, u, d
         if self.direction == 0:
             if self.target[0] > self.x_pos and self.turns[0]:
@@ -734,6 +734,7 @@ def draw_board():
                 pygame.draw.arc(screen, 'yellow',
                                 [(j * num2 - (num2 * 0.4)) - 2, (i * num1 - (0.4 * num1)), num2, num1], 3 * PI / 2,
                                 2 * PI, 3)
+                
 # Vẽ Pac-Man với các animation khác nhau
 def draw_player():
     # 0-RIGHT, 1-LEFT, 2-UP, 3-DOWN
@@ -767,23 +768,23 @@ def check_position(centerx, centery):
                 turns[2] = True
 
         if direction == 2 or direction == 3:
-            if 10 <= centerx % num2 <= 20:
+            if 12 <= centerx % num2 <= 18:
                 if level[(centery + num3) // num1][centerx // num2] < 3:
                     turns[3] = True
                 if level[(centery - num3) // num1][centerx // num2] < 3:
                     turns[2] = True
-            if 10 <= centery % num1 <= 20:
+            if 12 <= centery % num1 <= 18:
                 if level[centery // num1][(centerx - num2) // num2] < 3:
                     turns[1] = True
                 if level[centery // num1][(centerx + num2) // num2] < 3:
                     turns[0] = True
         if direction == 0 or direction == 1:
-            if 10 <= centerx % num2 <= 20:
+            if 12 <= centerx % num2 <= 18:
                 if level[(centery + num1) // num1][centerx // num2] < 3:
                     turns[3] = True
                 if level[(centery - num1) // num1][centerx // num2] < 3:
                     turns[2] = True
-            if 10 <= centery % num1 <= 20:
+            if 12 <= centery % num1 <= 18:
                 if level[centery // num1][(centerx - num3) // num2] < 3:
                     turns[1] = True
                 if level[centery // num1][(centerx + num3) // num2] < 3:
@@ -794,7 +795,7 @@ def check_position(centerx, centery):
     return turns
 
 def move_player(play_x, play_y):
-    if current_level == 0:  # Level 1: Pac-Man đứng yên
+    if current_level == 0 or current_level == 1 or current_level == 2 or current_level == 3 or current_level == 4 :  # Level 1,2,3,4,5: Pac-Man đứng yên
         return play_x, play_y
     else:  # Các level khác giữ logic gốc
         if direction == 0 and turns_allowed[0]:
@@ -809,7 +810,7 @@ def move_player(play_x, play_y):
 
 # Hàm này xác định mục tiêu di chuyển cho từng con ma
 def get_targets(blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y):
-    if current_level == 0:  # Level 1: Chỉ Blinky hoạt động
+    if current_level == 0:  # Level 1: Chỉ redGhost hoạt động
         return [(player_x, player_y), (0, 0), (0, 0), (0, 0)]
     else:
         if player_x < 450:
@@ -822,36 +823,36 @@ def get_targets(blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y):
             runaway_y = 0
         return_target = (380, 400)
         if powerup:
-            if not blinky.dead and not eaten_ghost[0]:
+            if not redGhost.dead and not eaten_ghost[0]:
                 blink_target = (runaway_x, runaway_y)
-            elif not blinky.dead and eaten_ghost[0]:
+            elif not redGhost.dead and eaten_ghost[0]:
                 if 340 < blink_x < 560 and 340 < blink_y < 500:
                     blink_target = (400, 100)
                 else:
                     blink_target = (player_x, player_y)
             else:
                 blink_target = return_target
-            if not inky.dead and not eaten_ghost[1]:
+            if not blueGhost.dead and not eaten_ghost[1]:
                 ink_target = (runaway_x, player_y)
-            elif not inky.dead and eaten_ghost[1]:
+            elif not blueGhost.dead and eaten_ghost[1]:
                 if 340 < ink_x < 560 and 340 < ink_y < 500:
                     ink_target = (400, 100)
                 else:
                     ink_target = (player_x, player_y)
             else:
                 ink_target = return_target
-            if not pinky.dead:
+            if not pinkGhost.dead:
                 pink_target = (player_x, runaway_y)
-            elif not pinky.dead and eaten_ghost[2]:
+            elif not pinkGhost.dead and eaten_ghost[2]:
                 if 340 < pink_x < 560 and 340 < pink_y < 500:
                     pink_target = (400, 100)
                 else:
                     pink_target = (player_x, player_y)
             else:
                 pink_target = return_target
-            if not clyde.dead and not eaten_ghost[3]:
+            if not orangeGhost.dead and not eaten_ghost[3]:
                 clyd_target = (450, 450)
-            elif not clyde.dead and eaten_ghost[3]:
+            elif not orangeGhost.dead and eaten_ghost[3]:
                 if 340 < clyd_x < 560 and 340 < clyd_y < 500:
                     clyd_target = (400, 100)
                 else:
@@ -859,28 +860,28 @@ def get_targets(blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y):
             else:
                 clyd_target = return_target
         else:
-            if not blinky.dead:
+            if not redGhost.dead:
                 if 340 < blink_x < 560 and 340 < blink_y < 500:
                     blink_target = (400, 100)
                 else:
                     blink_target = (player_x, player_y)
             else:
                 blink_target = return_target
-            if not inky.dead:
+            if not blueGhost.dead:
                 if 340 < ink_x < 560 and 340 < ink_y < 500:
                     ink_target = (400, 100)
                 else:
                     ink_target = (player_x, player_y)
             else:
                 ink_target = return_target
-            if not pinky.dead:
+            if not pinkGhost.dead:
                 if 340 < pink_x < 560 and 340 < pink_y < 500:
                     pink_target = (400, 100)
                 else:
                     pink_target = (player_x, player_y)
             else:
                 pink_target = return_target
-            if not clyde.dead:
+            if not orangeGhost.dead:
                 if 340 < clyd_x < 560 and 340 < clyd_y < 500:
                     clyd_target = (400, 100)
                 else:
@@ -935,13 +936,13 @@ def update_ghost_speeds():
         ghost_speeds[2] = 2
     if eaten_ghost[3]:
         ghost_speeds[3] = 2
-    if blinky_dead:
+    if redGhost_dead:
         ghost_speeds[0] = 4
-    if inky_dead:
+    if blueGhost_dead:
         ghost_speeds[1] = 4
-    if pinky_dead:
+    if pinkGhost_dead:
         ghost_speeds[2] = 4
-    if clyde_dead:
+    if orangeGhost_dead:
         ghost_speeds[3] = 4
 
 def check_game_won():
@@ -965,23 +966,23 @@ def draw_game_elements():
 
 # Di chuyển Pac-Man và các ghost
 def move_characters():
-    global player_x, player_y, blinky_x, blinky_y, blinky_direction, inky_x, inky_y, inky_direction
-    global pinky_x, pinky_y, pinky_direction, clyde_x, clyde_y, clyde_direction, turns_allowed
+    global player_x, player_y, redGhost_x, redGhost_y, redGhost_direction, blueGhost_x, blueGhost_y, blueGhost_direction
+    global pinkGhost_x, pinkGhost_y, pinkGhost_direction, orangeGhost_x, orangeGhost_y, orangeGhost_direction, turns_allowed
     turns_allowed = check_position(center_x, center_y)
     if moving:
         player_x, player_y = move_player(player_x, player_y)
-        if current_level == 0:  # Level 1: Chỉ Blinky di chuyển
-            if not blinky_dead and not blinky.in_box:
-                blinky_x, blinky_y, blinky_direction = blinky.move_blinky()
+        if current_level == 0:  # Level 1: Chỉ redGhost di chuyển
+            if not redGhost_dead and not redGhost.in_box:
+                redGhost_x, redGhost_y, redGhost_direction = redGhost.move_redGhost()
         else:  # Các level khác: Tất cả ghost di chuyển
-            if not blinky_dead and not blinky.in_box:
-                blinky_x, blinky_y, blinky_direction = blinky.move_blinky()
-            if not pinky_dead and not pinky.in_box:
-                pinky_x, pinky_y, pinky_direction = pinky.move_pinky()
-            if not inky_dead and not inky.in_box:
-                inky_x, inky_y, inky_direction = inky.move_inky()
-            if not clyde_dead and not clyde.in_box:
-                clyde_x, clyde_y, clyde_direction = clyde.move_clyde()
+            if not redGhost_dead and not redGhost.in_box:
+                redGhost_x, redGhost_y, redGhost_direction = redGhost.move_redGhost()
+            if not pinkGhost_dead and not pinkGhost.in_box:
+                pinkGhost_x, pinkGhost_y, pinkGhost_direction = pinkGhost.move_pinkGhost()
+            if not blueGhost_dead and not blueGhost.in_box:
+                blueGhost_x, blueGhost_y, blueGhost_direction = blueGhost.move_blueGhost()
+            if not orangeGhost_dead and not orangeGhost.in_box:
+                orangeGhost_x, orangeGhost_y, orangeGhost_direction = orangeGhost.move_orangeGhost()
 
 # Xử lý khi Pac-Man ăn điểm nhỏ hoặc lớn
 def handle_point_collisions():
@@ -991,39 +992,39 @@ def handle_point_collisions():
 # Đặt lại trạng thái trò chơi khi Pac-Man mất mạng
 def reset_game_state():
     global lives, startup_counter, powerup, power_counter, player_x, player_y, direction, direction_command
-    global blinky_x, blinky_y, blinky_direction, inky_x, inky_y, inky_direction, pinky_x, pinky_y, pinky_direction
-    global clyde_x, clyde_y, clyde_direction, eaten_ghost, blinky_dead, inky_dead, clyde_dead, pinky_dead
+    global redGhost_x, redGhost_y, redGhost_direction, blueGhost_x, blueGhost_y, blueGhost_direction, pinkGhost_x, pinkGhost_y, pinkGhost_direction
+    global orangeGhost_x, orangeGhost_y, orangeGhost_direction, eaten_ghost, redGhost_dead, blueGhost_dead, orangeGhost_dead, pinkGhost_dead
     lives -= 1
     startup_counter = 0
     powerup = False
     power_counter = 0
     player_x = 450
-    player_y = 663
+    player_y = 438
     direction = 0
     direction_command = 0
-    blinky_x = 56
-    blinky_y = 58
-    blinky_direction = 0
-    inky_x = 440
-    inky_y = 388
-    inky_direction = 2
-    pinky_x = 440
-    pinky_y = 438
-    pinky_direction = 2
-    clyde_x = 440
-    clyde_y = 438
-    clyde_direction = 2
+    redGhost_x = 56
+    redGhost_y = 58
+    redGhost_direction = 0
+    blueGhost_x = 800
+    blueGhost_y = 58
+    blueGhost_direction = 2
+    pinkGhost_x = 56
+    pinkGhost_y = 828
+    pinkGhost_direction = 2
+    orangeGhost_x = 800
+    orangeGhost_y = 828
+    orangeGhost_direction = 2
     eaten_ghost = [False, False, False, False]
-    blinky_dead = False
-    inky_dead = False
-    clyde_dead = False
-    pinky_dead = False
+    redGhost_dead = False
+    blueGhost_dead = False
+    orangeGhost_dead = False
+    pinkGhost_dead = False
 
 # Xử lý va chạm giữa Pac-Man và ghost khi không có power-up
 def handle_ghost_collision_no_powerup():
     global game_over, moving
     if not powerup:
-        if player_circle.colliderect(blinky.rect) and not blinky.dead:
+        if player_circle.colliderect(redGhost.rect) and not redGhost.dead:
             if lives > 0:
                 reset_game_state()
             else:
@@ -1031,9 +1032,9 @@ def handle_ghost_collision_no_powerup():
                 moving = False
                 startup_counter = 0
         elif current_level != 0:  # Các ghost khác chỉ hoạt động ở level khác
-            if player_circle.colliderect(inky.rect) and not inky.dead or \
-               player_circle.colliderect(pinky.rect) and not pinky.dead or \
-               player_circle.colliderect(clyde.rect) and not clyde.dead:
+            if player_circle.colliderect(blueGhost.rect) and not blueGhost.dead or \
+               player_circle.colliderect(pinkGhost.rect) and not pinkGhost.dead or \
+               player_circle.colliderect(orangeGhost.rect) and not orangeGhost.dead:
                 if lives > 0:
                     reset_game_state()
                 else:
@@ -1043,39 +1044,39 @@ def handle_ghost_collision_no_powerup():
 
 # Xử lý va chạm giữa Pac-Man và ghost khi có power-up
 def handle_ghost_collision_powerup():
-    global game_over, moving, blinky_dead, inky_dead, pinky_dead, clyde_dead, eaten_ghost, score
+    global game_over, moving, redGhost_dead, blueGhost_dead, pinkGhost_dead, orangeGhost_dead, eaten_ghost, score
     if powerup:
-        if player_circle.colliderect(blinky.rect):
-            if eaten_ghost[0] and not blinky.dead:
+        if player_circle.colliderect(redGhost.rect):
+            if eaten_ghost[0] and not redGhost.dead:
                 if lives > 0:
                     reset_game_state()
                 else:
                     game_over = True
                     moving = False
                     startup_counter = 0
-            elif not blinky.dead and not eaten_ghost[0]:
-                blinky_dead = True
+            elif not redGhost.dead and not eaten_ghost[0]:
+                redGhost_dead = True
                 eaten_ghost[0] = True
                 score += (2 ** eaten_ghost.count(True)) * 100
         if current_level != 0:  # Các ghost khác chỉ hoạt động ở level khác
-            if player_circle.colliderect(inky.rect) and not inky.dead and not eaten_ghost[1]:
-                inky_dead = True
+            if player_circle.colliderect(blueGhost.rect) and not blueGhost.dead and not eaten_ghost[1]:
+                blueGhost_dead = True
                 eaten_ghost[1] = True
                 score += (2 ** eaten_ghost.count(True)) * 100
-            if player_circle.colliderect(pinky.rect) and not pinky.dead and not eaten_ghost[2]:
-                pinky_dead = True
+            if player_circle.colliderect(pinkGhost.rect) and not pinkGhost.dead and not eaten_ghost[2]:
+                pinkGhost_dead = True
                 eaten_ghost[2] = True
                 score += (2 ** eaten_ghost.count(True)) * 100
-            if player_circle.colliderect(clyde.rect) and not clyde.dead and not eaten_ghost[3]:
-                clyde_dead = True
+            if player_circle.colliderect(orangeGhost.rect) and not orangeGhost.dead and not eaten_ghost[3]:
+                orangeGhost_dead = True
                 eaten_ghost[3] = True
                 score += (2 ** eaten_ghost.count(True)) * 100
 
 # Xử lý các sự kiện từ người chơi (phím nhấn, thoát game)
 def handle_events():
     global run, direction_command, powerup, power_counter, lives, startup_counter, player_x, player_y, direction
-    global blinky_x, blinky_y, blinky_direction, inky_x, inky_y, inky_direction, pinky_x, pinky_y, pinky_direction
-    global clyde_x, clyde_y, clyde_direction, eaten_ghost, blinky_dead, inky_dead, clyde_dead, pinky_dead
+    global redGhost_x, redGhost_y, redGhost_direction, blueGhost_x, blueGhost_y, blueGhost_direction, pinkGhost_x, pinkGhost_y, pinkGhost_direction
+    global orangeGhost_x, orangeGhost_y, orangeGhost_direction, eaten_ghost, redGhost_dead, blueGhost_dead, orangeGhost_dead, pinkGhost_dead
     global score, level, game_over, game_won
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -1095,26 +1096,26 @@ def handle_events():
                 lives = 3
                 startup_counter = 0
                 player_x = 450
-                player_y = 663
+                player_y = 438
                 direction = 0
                 direction_command = 0
-                blinky_x = 56
-                blinky_y = 58
-                blinky_direction = 0
-                inky_x = 440
-                inky_y = 388
-                inky_direction = 2
-                pinky_x = 440
-                pinky_y = 438
-                pinky_direction = 2
-                clyde_x = 440
-                clyde_y = 438
-                clyde_direction = 2
+                redGhost_x = 56
+                redGhost_y = 58
+                redGhost_direction = 0
+                blueGhost_x = 800
+                blueGhost_y = 58
+                blueGhost_direction = 2
+                pinkGhost_x = 56
+                pinkGhost_y = 828
+                pinkGhost_direction = 2
+                orangeGhost_x = 800
+                orangeGhost_y = 828
+                orangeGhost_direction = 2
                 eaten_ghost = [False, False, False, False]
-                blinky_dead = False
-                inky_dead = False
-                clyde_dead = False
-                pinky_dead = False
+                redGhost_dead = False
+                blueGhost_dead = False
+                orangeGhost_dead = False
+                pinkGhost_dead = False
                 score = 0
                 level = copy.deepcopy(levels[current_level])
                 game_over = False
@@ -1153,16 +1154,16 @@ def handle_tunnels():
 
 # Hồi sinh ghost khi chúng về đến hộp trung tâm
 def revive_ghosts():
-    global blinky_dead, inky_dead, pinky_dead, clyde_dead
-    if blinky.in_box and blinky_dead:
-        blinky_dead = False
+    global redGhost_dead, blueGhost_dead, pinkGhost_dead, orangeGhost_dead
+    if redGhost.in_box and redGhost_dead:
+        redGhost_dead = False
     if current_level != 0:  # Các ghost khác chỉ hồi sinh ở level khác
-        if inky.in_box and inky_dead:
-            inky_dead = False
-        if pinky.in_box and pinky_dead:
-            pinky_dead = False
-        if clyde.in_box and clyde_dead:
-            clyde_dead = False
+        if blueGhost.in_box and blueGhost_dead:
+            blueGhost_dead = False
+        if pinkGhost.in_box and pinkGhost_dead:
+            pinkGhost_dead = False
+        if orangeGhost.in_box and orangeGhost_dead:
+            orangeGhost_dead = False
 
 def update_display():
     pygame.display.flip()
@@ -1222,13 +1223,13 @@ while run:
     draw_game_elements()
     
     # Tạo các đối tượng ghost với targets ban đầu
-    blinky = Ghost(blinky_x, blinky_y, targets[0], ghost_speeds[0], blinky_img, blinky_direction, blinky_dead, blinky_box, 0)
-    inky = Ghost(inky_x, inky_y, targets[1], ghost_speeds[1], inky_img, inky_direction, inky_dead, inky_box, 1)
-    pinky = Ghost(pinky_x, pinky_y, targets[2], ghost_speeds[2], pinky_img, pinky_direction, pinky_dead, pinky_box, 2)
-    clyde = Ghost(clyde_x, clyde_y, targets[3], ghost_speeds[3], clyde_img, clyde_direction, clyde_dead, clyde_box, 3)
+    redGhost = Ghost(redGhost_x, redGhost_y, targets[0], ghost_speeds[0], redGhost_img, redGhost_direction, redGhost_dead, redGhost_box, 0)
+    blueGhost = Ghost(blueGhost_x, blueGhost_y, targets[1], ghost_speeds[1], blueGhost_img, blueGhost_direction, blueGhost_dead, blueGhost_box, 1)
+    pinkGhost = Ghost(pinkGhost_x, pinkGhost_y, targets[2], ghost_speeds[2], pinkGhost_img, pinkGhost_direction, pinkGhost_dead, pinkGhost_box, 2)
+    orangeGhost = Ghost(orangeGhost_x, orangeGhost_y, targets[3], ghost_speeds[3], orangeGhost_img, orangeGhost_direction, orangeGhost_dead, orangeGhost_box, 3)
     
     # Cập nhật targets sau khi tạo ghost
-    targets = get_targets(blinky_x, blinky_y, inky_x, inky_y, pinky_x, pinky_y, clyde_x, clyde_y)
+    targets = get_targets(redGhost_x, redGhost_y, blueGhost_x, blueGhost_y, pinkGhost_x, pinkGhost_y, orangeGhost_x, orangeGhost_y)
     
     # Di chuyển nhân vật
     move_characters()
