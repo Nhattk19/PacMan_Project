@@ -100,59 +100,44 @@ class Ghost:
         ghost_rect = pygame.rect.Rect((self.center_x - 18, self.center_y - 18), (36, 36))
         return ghost_rect  # Trả về: Hình chữ nhật ghost_rect để dùng trong việc kiểm tra va chạm với Pac-Man
 
-    # Kiểm tra xem ghost có thể rẽ ở đâu (phải, trái, lên, xuống) và xác định trạng thái trong hộp ghost
+    # Kiểm tra xem ghost có thể rẽ ở đâu (phải, trái, lên, xuống)
     def check_collisions(self):
-        # R, L, U, D
         num1 = ((HEIGHT - 50) // 32)  # 32: Chiều cao mỗi ô trên lưới
         num2 = (WIDTH // 30)  # 30 Chiều rộng mỗi ô trên lưới
         num3 = 15  # Khoảng cách kiểm tra va chạm
         self.turns = [False, False, False, False]  # Mảng boolean cho phép rẽ (0 = phải, 1 = trái, 2 = lên, 3 = xuống)
         if 0 < self.center_x // 30 < 29:
-            if level[(self.center_y - num3) // num1][self.center_x // num2] == 9:
-                self.turns[2] = True
-            if level[self.center_y // num1][(self.center_x - num3) // num2] < 3 \
-                    or (level[self.center_y // num1][(self.center_x - num3) // num2] == 9 and self.dead):
+            if level[self.center_y // num1][(self.center_x - num3) // num2] < 3 :
                 self.turns[1] = True
-            if level[self.center_y // num1][(self.center_x + num3) // num2] < 3 \
-                    or (level[self.center_y // num1][(self.center_x + num3) // num2] == 9 and self.dead):
+            if level[self.center_y // num1][(self.center_x + num3) // num2] < 3 :
                 self.turns[0] = True
-            if level[(self.center_y + num3) // num1][self.center_x // num2] < 3 \
-                    or (level[(self.center_y + num3) // num1][self.center_x // num2] == 9 and self.dead):
+            if level[(self.center_y + num3) // num1][self.center_x // num2] < 3 :
                 self.turns[3] = True
-            if level[(self.center_y - num3) // num1][self.center_x // num2] < 3 \
-                    or (level[(self.center_y - num3) // num1][self.center_x // num2] == 9 and self.dead):
+            if level[(self.center_y - num3) // num1][self.center_x // num2] < 3 :
                 self.turns[2] = True
 
             if self.direction == 2 or self.direction == 3:
                 if 12 <= self.center_x % num2 <= 18:
-                    if level[(self.center_y + num3) // num1][self.center_x // num2] < 3 \
-                            or (level[(self.center_y + num3) // num1][self.center_x // num2] == 9 and self.dead):
+                    if level[(self.center_y + num3) // num1][self.center_x // num2] < 3 :
                         self.turns[3] = True
-                    if level[(self.center_y - num3) // num1][self.center_x // num2] < 3 \
-                            or (level[(self.center_y - num3) // num1][self.center_x // num2] == 9 and self.dead):
+                    if level[(self.center_y - num3) // num1][self.center_x // num2] < 3 :
                         self.turns[2] = True
                 if 12 <= self.center_y % num1 <= 18:
-                    if level[self.center_y // num1][(self.center_x - num2) // num2] < 3 \
-                            or (level[self.center_y // num1][(self.center_x - num2) // num2] == 9 and self.dead):
+                    if level[self.center_y // num1][(self.center_x - num2) // num2] < 3 :
                         self.turns[1] = True
-                    if level[self.center_y // num1][(self.center_x + num2) // num2] < 3 \
-                            or (level[self.center_y // num1][(self.center_x + num2) // num2] == 9 and self.dead):
+                    if level[self.center_y // num1][(self.center_x + num2) // num2] < 3 :
                         self.turns[0] = True
 
             if self.direction == 0 or self.direction == 1:
                 if 12 <= self.center_x % num2 <= 18:
-                    if level[(self.center_y + num3) // num1][self.center_x // num2] < 3 \
-                            or (level[(self.center_y + num3) // num1][self.center_x // num2] == 9 and self.dead):
+                    if level[(self.center_y + num3) // num1][self.center_x // num2] < 3 :
                         self.turns[3] = True
-                    if level[(self.center_y - num3) // num1][self.center_x // num2] < 3 \
-                            or (level[(self.center_y - num3) // num1][self.center_x // num2] == 9 and self.dead):
+                    if level[(self.center_y - num3) // num1][self.center_x // num2] < 3 :
                         self.turns[2] = True
                 if 12 <= self.center_y % num1 <= 18:
-                    if level[self.center_y // num1][(self.center_x - num3) // num2] < 3 \
-                            or (level[self.center_y // num1][(self.center_x - num3) // num2] == 9 and self.dead):
+                    if level[self.center_y // num1][(self.center_x - num3) // num2] < 3 :
                         self.turns[1] = True
-                    if level[self.center_y // num1][(self.center_x + num3) // num2] < 3 \
-                            or (level[self.center_y // num1][(self.center_x + num3) // num2] == 9 and self.dead):
+                    if level[self.center_y // num1][(self.center_x + num3) // num2] < 3 :
                         self.turns[0] = True
         else:
             self.turns[0] = True
@@ -996,7 +981,6 @@ def move_characters():
                 blueGhost_x, blueGhost_y, blueGhost_direction = blueGhost.move_blueGhost()
             if not orangeGhost_dead :
                 orangeGhost_x, orangeGhost_y, orangeGhost_direction = orangeGhost.move_orangeGhost()
-        print(orangeGhost_x, orangeGhost_y,redGhost_x, redGhost_y,pinkGhost_x, pinkGhost_y, blueGhost_x, blueGhost_y)
 
 # Xử lý khi Pac-Man ăn điểm nhỏ hoặc lớn
 def handle_point_collisions():
