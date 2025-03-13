@@ -65,6 +65,74 @@ lives = 3
 game_over = False
 game_won = False
 current_level = 0  # Theo dõi level hiện tại
+pinkGhost_index=0
+pinkGhost_path = None
+
+class Node:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.neighbors = []  # Danh sách liên kết đến các nút lân cận
+
+    def add_neighbor(self, neighbor):
+        self.neighbors.append(neighbor)
+
+def build_graph(level):
+    graph = {}
+    height = len(level)
+    width = len(level[0]) if height > 0 else 0
+
+    # Duyệt qua từng ô trong bản đồ
+    for y in range(height):
+        for x in range(width):
+            # Kiểm tra xem ô có hợp lệ không (không phải tường)
+            if level[y][x] < 3:  # Điều kiện này có thể cần điều chỉnh tùy vào bản đồ của bạn
+                # Tạo một nút mới và thêm vào đồ thị
+                node = Node(x, y)
+                graph[(x, y)] = node
+                #print(f"Added node: ({x}, {y})")  # Debug: In ra các nút được thêm
+
+    # Kết nối các nút lân cận
+    for (x, y), node in graph.items():
+        neighbors = [
+            (x + 1, y),  # Phải
+            (x - 1, y),  # Trái
+            (x, y - 1),  # Lên
+            (x, y + 1),  # Xuống
+        ]
+        for nx, ny in neighbors:
+            if (nx, ny) in graph:  # Kiểm tra xem nút lân cận có tồn tại trong đồ thị không
+                node.add_neighbor(graph[(nx, ny)])
+                #print(f"Connected ({x}, {y}) -> ({nx}, {ny})")  # Debug: In ra các kết nối
+
+    return graph
+
+def dfs(start, target, visited=None, path=None):
+    if visited is None:
+        visited = set()
+    if path is None:
+        path = []
+
+    visited.add(start)
+    path.append(start)
+
+    # Nếu đã đến mục tiêu, trả về đường đi
+    if (start.x, start.y) == (target.x, target.y):
+        return path
+
+    # Duyệt qua các nút lân cận
+    for neighbor in start.neighbors:
+        if neighbor not in visited:
+            result = dfs(neighbor, target, visited, path)
+            if result is not None:
+                return result
+
+    # Nếu không tìm thấy đường đi, loại bỏ nút hiện tại khỏi đường đi
+    path.pop()
+    return None
+
+
+
 
 class Ghost:
     def __init__(self, x_coord, y_coord, target, speed, img, direct, dead, id):
@@ -508,128 +576,111 @@ class Ghost:
             self.x_pos -= 30
         return self.x_pos, self.y_pos, self.direction
 
+
+
     def move_pinkGhost(self):
-        # r, l, u, d
-        if self.direction == 0:
-            if self.target[0] > self.x_pos and self.turns[0]:
+        global player_x, player_y
+
+        # Xây dựng đồ thị từ bản đồ
+        graph = build_graph(level)
+        #print(graph)
+        # Lấy vị trí hiện tại của pinkGhost và Pac-Man (tọa độ ô lưới)
+        current_pos = (self.center_x // 30, 30)
+        target_pos_begin = (15, 24)
+        target_pos = (player_x // 30, player_y //27)
+        #print("target_pos:", target_pos)
+        # Lấy nút bắt đầu và nút mục tiêu từ đồ thị
+        start_node = graph.get(current_pos)
+        target_node = graph.get(target_pos)
+        #print("Graph keys (nodes):", graph.keys())
+        #print(start_node,target_node)
+
+
+
+            
+    
+        print()
+        print(target_pos)
+        # Sử dụng DFS để tìm đường đi
+        path = dfs(start_node, target_node)
+        # if path:
+        #     print("Path found:")
+        #     for node in path:
+        #         print(f"({node.x}, {node.y})")
+        # else:
+        #     print("No path found.")
+        global  pinkGhost_index,pinkGhost_path
+
+        if(target_pos_begin == target_pos):
+            if(pinkGhost_index == 0):
+                pinkGhost_path = path
+                pinkGhost_index +=1
+            dx = pinkGhost_path[1].x -  pinkGhost_path[0].x  # Tính toán hướng di chuyển theo trục x
+            dy = pinkGhost_path[1].y -  pinkGhost_path[0].y  # Tính toán hướng di chuyển theo trục y
+            # print(dx,dy,self.direction)
+            print(pinkGhost_path[0].x,pinkGhost_path[0].y,pinkGhost_path[1].x,pinkGhost_path[1].y)
+            # print("Path found:")
+            # for node in pinkGhost_path:
+            #     print(f"({node.x}, {node.y})")
+            # Cập nhật hướng di chuyển của pinkGhost
+            if dx > 0:
+                self.direction = 0  # Phải
+            elif dx < 0:
+                self.direction = 1  # Trái
+            elif dy < 0:
+                self.direction = 2  # Lên
+            elif dy > 0:
+                self.direction = 3  # Xuống
+            if self.direction == 0 and self.turns[0]:
                 self.x_pos += self.speed
-            elif not self.turns[0]:
-                if self.target[1] > self.y_pos and self.turns[3]:
-                    self.direction = 3
-                    self.y_pos += self.speed
-                elif self.target[1] < self.y_pos and self.turns[2]:
-                    self.direction = 2
-                    self.y_pos -= self.speed
-                elif self.target[0] < self.x_pos and self.turns[1]:
-                    self.direction = 1
-                    self.x_pos -= self.speed
-                elif self.turns[3]:
-                    self.direction = 3
-                    self.y_pos += self.speed
-                elif self.turns[2]:
-                    self.direction = 2
-                    self.y_pos -= self.speed
-                elif self.turns[1]:
-                    self.direction = 1
-                    self.x_pos -= self.speed
-            elif self.turns[0]:
-                self.x_pos += self.speed
-        elif self.direction == 1:
-            if self.target[1] > self.y_pos and self.turns[3]:
-                self.direction = 3
-            elif self.target[0] < self.x_pos and self.turns[1]:
+            elif self.direction == 1 and self.turns[1]:
                 self.x_pos -= self.speed
-            elif not self.turns[1]:
-                if self.target[1] > self.y_pos and self.turns[3]:
-                    self.direction = 3
-                    self.y_pos += self.speed
-                elif self.target[1] < self.y_pos and self.turns[2]:
-                    self.direction = 2
-                    self.y_pos -= self.speed
-                elif self.target[0] > self.x_pos and self.turns[0]:
-                    self.direction = 0
-                    self.x_pos += self.speed
-                elif self.turns[3]:
-                    self.direction = 3
-                    self.y_pos += self.speed
-                elif self.turns[2]:
-                    self.direction = 2
-                    self.y_pos -= self.speed
-                elif self.turns[0]:
-                    self.direction = 0
-                    self.x_pos += self.speed
-            elif self.turns[1]:
-                self.x_pos -= self.speed
-        elif self.direction == 2:
-            if self.target[0] < self.x_pos and self.turns[1]:
-                self.direction = 1
-                self.x_pos -= self.speed
-            elif self.target[1] < self.y_pos and self.turns[2]:
-                self.direction = 2
+            elif self.direction == 2 and self.turns[2]:
                 self.y_pos -= self.speed
-            elif not self.turns[2]:
-                if self.target[0] > self.x_pos and self.turns[0]:
-                    self.direction = 0
-                    self.x_pos += self.speed
-                elif self.target[0] < self.x_pos and self.turns[1]:
-                    self.direction = 1
-                    self.x_pos -= self.speed
-                elif self.target[1] > self.y_pos and self.turns[3]:
-                    self.direction = 3
-                    self.y_pos += self.speed
-                elif self.turns[1]:
-                    self.direction = 1
-                    self.x_pos -= self.speed
-                elif self.turns[3]:
-                    self.direction = 3
-                    self.y_pos += self.speed
-                elif self.turns[0]:
-                    self.direction = 0
-                    self.x_pos += self.speed
-            elif self.turns[2]:
-                if self.target[0] > self.x_pos and self.turns[0]:
-                    self.direction = 0
-                    self.x_pos += self.speed
-                elif self.target[0] < self.x_pos and self.turns[1]:
-                    self.direction = 1
-                    self.x_pos -= self.speed
-                else:
-                    self.y_pos -= self.speed
-        elif self.direction == 3:
-            if self.target[1] > self.y_pos and self.turns[3]:
-                self.y_pos += self.speed
-            elif not self.turns[3]:
-                if self.target[0] > self.x_pos and self.turns[0]:
-                    self.direction = 0
-                    self.x_pos += self.speed
-                elif self.target[0] < self.x_pos and self.turns[1]:
-                    self.direction = 1
-                    self.x_pos -= self.speed
-                elif self.target[1] < self.y_pos and self.turns[2]:
-                    self.direction = 2
-                    self.y_pos -= self.speed
-                elif self.turns[2]:
-                    self.direction = 2
-                    self.y_pos -= self.speed
-                elif self.turns[1]:
-                    self.direction = 1
-                    self.x_pos -= self.speed
-                elif self.turns[0]:
-                    self.direction = 0
-                    self.x_pos += self.speed
-            elif self.turns[3]:
-                if self.target[0] > self.x_pos and self.turns[0]:
-                    self.direction = 0
-                    self.x_pos += self.speed
-                elif self.target[0] < self.x_pos and self.turns[1]:
-                    self.direction = 1
-                    self.x_pos -= self.speed
-                else:
-                    self.y_pos += self.speed
-        if self.x_pos < -30:
-            self.x_pos = 900
-        elif self.x_pos > 900:
-            self.x_pos -= 30
+            elif self.direction == 3 and self.turns[3]:
+                self.y_pos += self.speed    
+            self.center_x = self.x_pos + 22
+            self.center_y = self.y_pos + 22
+            print (abs(self.center_x  - pinkGhost_path[1].x*30),abs(self.center_y - (pinkGhost_path[1].y*28+11)))
+            if abs(self.center_x  - pinkGhost_path[1].x*30) < 1 and abs(self.center_y - (pinkGhost_path[1].y*28+11)) < 1:
+                pinkGhost_path.pop(0)
+
+            
+
+        else:
+            if path:  # Nếu tìm thấy đường đi
+                # Lấy nút tiếp theo trong đường đi
+                if path[1]:
+                    dx = path[1].x -  path[0].x  # Tính toán hướng di chuyển theo trục x
+                    dy = path[1].y -  path[0].y  # Tính toán hướng di chuyển theo trục y
+                    print(dx,dy,self.direction)
+                    print(path[0].x,path[0].y,path[1].x,path[1].y)
+                    print("Path found:")
+                    for node in path:
+                        print(f"({node.x}, {node.y})")
+                    # Cập nhật hướng di chuyển của pinkGhost
+                    if dx > 0:
+                        self.direction = 0  # Phải
+                    elif dx < 0:
+                        self.direction = 1  # Trái
+                    elif dy < 0:
+                        self.direction = 2  # Lên
+                    elif dy > 0:
+                        self.direction = 3  # Xuống
+                    if self.direction == 0 and self.turns[0]:
+                        self.x_pos += self.speed
+                    elif self.direction == 1 and self.turns[1]:
+                        self.x_pos -= self.speed
+                    elif self.direction == 2 and self.turns[2]:
+                        self.y_pos -= self.speed
+                    elif self.direction == 3 and self.turns[3]:
+                        self.y_pos += self.speed    
+
+
+
+        # Di chuyển pinkGhost theo hướng đã chọn
+
+
         return self.x_pos, self.y_pos, self.direction
 
 # Thông tin bổ sung giúp người chơi theo dõi trạng thái trò chơi
