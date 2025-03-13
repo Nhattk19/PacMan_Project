@@ -7,41 +7,41 @@ import math
 pygame.init()
 
 WIDTH = 900
-HEIGHT = 950
+HEIGHT = 960
 screen = pygame.display.set_mode([WIDTH, HEIGHT])  # Tạo ra cửa sổ trò chơi
 timer = pygame.time.Clock()  # Đối tượng đồng hồ để kiểm soát khung hình
 fps = 60
-font = pygame.font.Font('freesansbold.ttf', 20)
+font = pygame.font.Font('freesansbold.ttf', 15)
 level = copy.deepcopy(boards)  # Bản sao của board có thể thay đổi trong quá trình chơi
 color = 'blue'
 PI = math.pi  # Dùng để vẽ các đường cong
 player_images = []  # Danh sách rỗng lưu các hình ảnh player
 for i in range(1, 5):  # Lặp từ 1 đến 4 để tải các hoạt động của Pac-Man
-    player_images.append(pygame.transform.scale(pygame.image.load(f'assets/player_images/{i}.png'), (45, 45)))
-redGhost_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/red.png'), (45, 45))  # Màu đỏ
-pinkGhost_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/pink.png'), (45, 45))  # Màu hồng
-blueGhost_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/blue.png'), (45, 45))  # Xanh dương
-orangeGhost_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/orange.png'), (45, 45))  # Cam
-spooked_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/powerup.png'), (45, 45))  # Sợ hãi
-dead_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/dead.png'), (45, 45))
+    player_images.append(pygame.transform.scale(pygame.image.load(f'assets/player_images/{i}.png'), (30, 30)))
+redGhost_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/red.png'), (30, 30))  # Màu đỏ
+pinkGhost_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/pink.png'), (30, 30))  # Màu hồng
+blueGhost_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/blue.png'), (30, 30))  # Xanh dương
+orangeGhost_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/orange.png'), (30, 30))  # Cam
+spooked_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/powerup.png'), (30, 30))  # Sợ hãi
+dead_img = pygame.transform.scale(pygame.image.load(f'assets/ghost_images/dead.png'), (30, 30))
 
 # Danh sách 6 level trống
 levels = [boards, boards, boards, boards, boards, boards]  # Để trống, bạn sẽ điền sau (hiện dùng boards mặc định)
 
 player_x = 450
-player_y = 663
+player_y = 690
 direction = 0  # Hướng ban đầu của Pac-Man (0 = phải, 1 = trái, 2 = lên, 3 = xuống)
-redGhost_x = 50
-redGhost_y = 45
+redGhost_x = 60
+redGhost_y = 30
 redGhost_direction = 1
-blueGhost_x = 802
-blueGhost_y = 45
+blueGhost_x = 810
+blueGhost_y = 30
 blueGhost_direction = 0
-pinkGhost_x = 50
-pinkGhost_y = 829
+pinkGhost_x = 60
+pinkGhost_y = 870
 pinkGhost_direction = 2
-orangeGhost_x = 802
-orangeGhost_y = 829
+orangeGhost_x = 810
+orangeGhost_y = 870
 orangeGhost_direction = 2
 counter = 0  # Để thay đổi animation của Pac-Man
 flicker = False  # Biến boolean để bật/tắt hiệu ứng nhấp nháy của điểm lớn
@@ -61,12 +61,13 @@ pinkGhost_dead = False
 moving = False  # Trạng thái di chuyển của Pac-Man và ghost, ban đầu là dừng (do có giai đoạn khởi động)
 ghost_speeds = [2, 2, 2, 2]
 startup_counter = 0  # Đếm frame cho giai đoạn khởi động (180 frame đầu tiên)
-lives = 3
+lives = 0
 game_over = False
 game_won = False
 current_level = 0  # Theo dõi level hiện tại
-pinkGhost_index=0
-pinkGhost_path = None
+pink_path = None
+blue_path = None
+game_paused = False
 
 class Node:
     def __init__(self, x, y):
@@ -90,7 +91,6 @@ def build_graph(level):
                 # Tạo một nút mới và thêm vào đồ thị
                 node = Node(x, y)
                 graph[(x, y)] = node
-                #print(f"Added node: ({x}, {y})")  # Debug: In ra các nút được thêm
 
     # Kết nối các nút lân cận
     for (x, y), node in graph.items():
@@ -103,9 +103,45 @@ def build_graph(level):
         for nx, ny in neighbors:
             if (nx, ny) in graph:  # Kiểm tra xem nút lân cận có tồn tại trong đồ thị không
                 node.add_neighbor(graph[(nx, ny)])
-                #print(f"Connected ({x}, {y}) -> ({nx}, {ny})")  # Debug: In ra các kết nối
 
     return graph
+
+
+from collections import deque
+
+def bfs(start, target):
+    # Hàng đợi để lưu trữ các nút cần duyệt
+    queue = deque()
+    # Từ điển để lưu trữ đường đi từ start đến từng nút
+    parent = {}
+    
+    # Bắt đầu từ nút start
+    queue.append(start)
+    parent[(start.x, start.y)] = None  # Nút start không có nút cha
+
+    while queue:
+        current_node = queue.popleft()
+
+        # Nếu tìm thấy nút mục tiêu, xây dựng đường đi và trả về
+        if (current_node.x, current_node.y) == (target.x, target.y):
+            path = []
+            node = current_node
+            while node is not None:
+                path.append(node)
+                node = parent[(node.x, node.y)]
+            path.reverse()  # Đảo ngược đường đi để có thứ tự từ start đến target
+            return path
+
+        # Duyệt qua các nút lân cận
+        for neighbor in current_node.neighbors:
+            if (neighbor.x, neighbor.y) not in parent:  # Nếu nút lân cận chưa được duyệt
+                queue.append(neighbor)
+                parent[(neighbor.x, neighbor.y)] = current_node  # Lưu nút cha
+
+    # Nếu không tìm thấy đường đi, trả về None
+    return None
+
+
 
 def dfs(start, target, visited=None, path=None):
     if visited is None:
@@ -138,8 +174,8 @@ class Ghost:
     def __init__(self, x_coord, y_coord, target, speed, img, direct, dead, id):
         self.x_pos = x_coord
         self.y_pos = y_coord
-        self.center_x = self.x_pos + 22  # Tọa độ tâm của ghost
-        self.center_y = self.y_pos + 22
+        self.center_x = self.x_pos + 15  # Tọa độ tâm của ghost
+        self.center_y = self.y_pos + 15
         self.target = target
         self.speed = speed
         self.img = img
@@ -151,13 +187,13 @@ class Ghost:
 
     def draw(self):
         if current_level == 0 and self.id != 0:  # Chỉ vẽ redGhost ở Level 1
-            return pygame.rect.Rect((self.center_x - 18, self.center_y - 18), (36, 36))
+            return pygame.rect.Rect((self.center_x - 15, self.center_y - 15), (30, 30))
         elif current_level == 1 and self.id != 1:  # Chỉ vẽ pinkGhost ở Level 2
-            return pygame.rect.Rect((self.center_x - 18, self.center_y - 18), (36, 36))
+            return pygame.rect.Rect((self.center_x - 15, self.center_y - 15), (30, 30))
         elif current_level == 2 and self.id != 2:  # Chỉ vẽ blueGhost ở Level 3
-            return pygame.rect.Rect((self.center_x - 18, self.center_y - 18), (36, 36))
+            return pygame.rect.Rect((self.center_x - 15, self.center_y - 15), (30, 30))
         elif current_level == 3 and self.id != 3:  # Chỉ vẽ orangeGhost ở Level 4
-            return pygame.rect.Rect((self.center_x - 18, self.center_y - 18), (36, 36))
+            return pygame.rect.Rect((self.center_x - 15, self.center_y - 15), (30, 30))
         
         if (not powerup and not self.dead) or (eaten_ghost[self.id] and powerup and not self.dead):
             screen.blit(self.img, (self.x_pos, self.y_pos))
@@ -165,13 +201,13 @@ class Ghost:
             screen.blit(spooked_img, (self.x_pos, self.y_pos))
         else:
             screen.blit(dead_img, (self.x_pos, self.y_pos))
-        ghost_rect = pygame.rect.Rect((self.center_x - 18, self.center_y - 18), (36, 36))
+        ghost_rect = pygame.rect.Rect((self.center_x - 15, self.center_y - 15), (30, 30))
         return ghost_rect  # Trả về: Hình chữ nhật ghost_rect để dùng trong việc kiểm tra va chạm với Pac-Man
 
     # Kiểm tra xem ghost có thể rẽ ở đâu (phải, trái, lên, xuống)
     def check_collisions(self):
-        num1 = ((HEIGHT - 50) // 32)  # 32: Chiều cao mỗi ô trên lưới
-        num2 = (WIDTH // 30)  # 30 Chiều rộng mỗi ô trên lưới
+        num1 = (30)  # 32: Chiều cao mỗi ô trên lưới
+        num2 = 30  # 30 Chiều rộng mỗi ô trên lưới
         num3 = 15  # Khoảng cách kiểm tra va chạm
         self.turns = [False, False, False, False]  # Mảng boolean cho phép rẽ (0 = phải, 1 = trái, 2 = lên, 3 = xuống)
         if 0 < self.center_x // 30 < 29:
@@ -456,173 +492,98 @@ class Ghost:
         return self.x_pos, self.y_pos, self.direction
 
     def move_blueGhost(self):
-        # r, l, u, d
-        if self.direction == 0:
-            if self.target[0] > self.x_pos and self.turns[0]:
-                self.x_pos += self.speed
-            elif not self.turns[0]:
-                if self.target[1] > self.y_pos and self.turns[3]:
-                    self.direction = 3
-                    self.y_pos += self.speed
-                elif self.target[1] < self.y_pos and self.turns[2]:
-                    self.direction = 2
-                    self.y_pos -= self.speed
-                elif self.target[0] < self.x_pos and self.turns[1]:
-                    self.direction = 1
-                    self.x_pos -= self.speed
-                elif self.turns[3]:
-                    self.direction = 3
-                    self.y_pos += self.speed
-                elif self.turns[2]:
-                    self.direction = 2
-                    self.y_pos -= self.speed
-                elif self.turns[1]:
-                    self.direction = 1
-                    self.x_pos -= self.speed
-            elif self.turns[0]:
-                if self.target[1] > self.y_pos and self.turns[3]:
-                    self.direction = 3
-                    self.y_pos += self.speed
-                if self.target[1] < self.y_pos and self.turns[2]:
-                    self.direction = 2
-                    self.y_pos -= self.speed
-                else:
-                    self.x_pos += self.speed
-        elif self.direction == 1:
-            if self.target[1] > self.y_pos and self.turns[3]:
-                self.direction = 3
-            elif self.target[0] < self.x_pos and self.turns[1]:
-                self.x_pos -= self.speed
-            elif not self.turns[1]:
-                if self.target[1] > self.y_pos and self.turns[3]:
-                    self.direction = 3
-                    self.y_pos += self.speed
-                elif self.target[1] < self.y_pos and self.turns[2]:
-                    self.direction = 2
-                    self.y_pos -= self.speed
-                elif self.target[0] > self.x_pos and self.turns[0]:
-                    self.direction = 0
-                    self.x_pos += self.speed
-                elif self.turns[3]:
-                    self.direction = 3
-                    self.y_pos += self.speed
-                elif self.turns[2]:
-                    self.direction = 2
-                    self.y_pos -= self.speed
-                elif self.turns[0]:
-                    self.direction = 0
-                    self.x_pos += self.speed
-            elif self.turns[1]:
-                if self.target[1] > self.y_pos and self.turns[3]:
-                    self.direction = 3
-                    self.y_pos += self.speed
-                if self.target[1] < self.y_pos and self.turns[2]:
-                    self.direction = 2
-                    self.y_pos -= self.speed
-                else:
-                    self.x_pos -= self.speed
-        elif self.direction == 2:
-            if self.target[1] < self.y_pos and self.turns[2]:
-                self.direction = 2
-                self.y_pos -= self.speed
-            elif not self.turns[2]:
-                if self.target[0] > self.x_pos and self.turns[0]:
-                    self.direction = 0
-                    self.x_pos += self.speed
-                elif self.target[0] < self.x_pos and self.turns[1]:
-                    self.direction = 1
-                    self.x_pos -= self.speed
-                elif self.target[1] > self.y_pos and self.turns[3]:
-                    self.direction = 3
-                    self.y_pos += self.speed
-                elif self.turns[1]:
-                    self.direction = 1
-                    self.x_pos -= self.speed
-                elif self.turns[3]:
-                    self.direction = 3
-                    self.y_pos += self.speed
-                elif self.turns[0]:
-                    self.direction = 0
-                    self.x_pos += self.speed
-            elif self.turns[2]:
-                self.y_pos -= self.speed
-        elif self.direction == 3:
-            if self.target[1] > self.y_pos and self.turns[3]:
-                self.y_pos += self.speed
-            elif not self.turns[3]:
-                if self.target[0] > self.x_pos and self.turns[0]:
-                    self.direction = 0
-                    self.x_pos += self.speed
-                elif self.target[0] < self.x_pos and self.turns[1]:
-                    self.direction = 1
-                    self.x_pos -= self.speed
-                elif self.target[1] < self.y_pos and self.turns[2]:
-                    self.direction = 2
-                    self.y_pos -= self.speed
-                elif self.turns[2]:
-                    self.direction = 2
-                    self.y_pos -= self.speed
-                elif self.turns[1]:
-                    self.direction = 1
-                    self.x_pos -= self.speed
-                elif self.turns[0]:
-                    self.direction = 0
-                    self.x_pos += self.speed
-            elif self.turns[3]:
-                self.y_pos += self.speed
-        if self.x_pos < -30:
-            self.x_pos = 900
-        elif self.x_pos > 900:
-            self.x_pos -= 30
+        global player_x, player_y, current_level, blue_path
+
+        # Xây dựng đồ thị từ bản đồ
+        graph = build_graph(level)
+
+        # Lấy vị trí hiện tại của Pink Ghost và Pac-Man (tọa độ ô lưới)
+        current_pos = (self.center_x // 30, self.center_y // 30)
+        target_pos = (round(player_x / 30), round(player_y / 30))
+
+        # Lấy nút bắt đầu và nút mục tiêu từ đồ thị
+        start_node = graph.get(current_pos)
+        target_node = graph.get(target_pos)
+
+        # Sử dụng BFS để tìm đường đi
+        if not blue_path:
+            blue_path = bfs(start_node, target_node)  # Sử dụng BFS thay vì DFS
+            print("Cập nhật đường đi mới -----------------------------------------------")
+
+        # Nếu không tìm thấy đường đi, dừng di chuyển
+        if not blue_path:
+            return self.x_pos, self.y_pos, self.direction
+
+        # Lấy nút tiếp theo trong đường đi
+        if len(blue_path) > 1:
+            next_node = blue_path[1]
+            dx = next_node.x - blue_path[0].x  # Tính toán hướng di chuyển theo trục x
+            dy = next_node.y - blue_path[0].y  # Tính toán hướng di chuyển theo trục y
+        else:
+            # Nếu chỉ còn 1 nút (đến đích), tính toán lại đường đi
+            blue_path = bfs(start_node, target_node)
+            dx, dy = 0, 0  # Tạm thời không di chuyển
+
+        # Cập nhật hướng di chuyển của Pink Ghost
+        if dx > 0:
+            self.direction = 0  # Phải
+        elif dx < 0:
+            self.direction = 1  # Trái
+        elif dy < 0:
+            self.direction = 2  # Lên
+        elif dy > 0:
+            self.direction = 3  # Xuống
+
+        # Di chuyển Pink Ghost theo hướng đã chọn
+        if self.direction == 0 and self.turns[0]:
+            self.x_pos += self.speed
+        elif self.direction == 1 and self.turns[1]:
+            self.x_pos -= self.speed
+        elif self.direction == 2 and self.turns[2]:
+            self.y_pos -= self.speed
+        elif self.direction == 3 and self.turns[3]:
+            self.y_pos += self.speed
+
+        # Cập nhật tọa độ trung tâm của Pink Ghost
+        self.center_x = self.x_pos + 15
+        self.center_y = self.y_pos + 15
+
+        # Kiểm tra nếu Pink Ghost đã đến nút tiếp theo
+        if len(blue_path) > 1 and abs(self.x_pos - blue_path[1].x * 30) < 1 and abs(self.y_pos - blue_path[1].y * 30) < 1:
+            blue_path.pop(0)  # Loại bỏ nút đã đi qua
+            print('Đã đến nút tiếp theo, pop đường đi ------------------------------')
+
         return self.x_pos, self.y_pos, self.direction
 
 
 
     def move_pinkGhost(self):
-        global player_x, player_y
+            global player_x, player_y,current_level,pink_path
+            # Xây dựng đồ thị từ bản đồ
+            graph = build_graph(level)
+            # Lấy vị trí hiện tại của pinkGhost và Pac-Man (tọa độ ô lưới)
+            current_pos = (self.center_x //30 ,self.center_y //30)
+            target_pos = (round(player_x /30), round(player_y /30))
+            # Lấy nút bắt đầu và nút mục tiêu từ đồ thị
+            start_node = graph.get(current_pos)
+            target_node = graph.get(target_pos)
+            # Sử dụng DFS để tìm đường đi
 
-        # Xây dựng đồ thị từ bản đồ
-        graph = build_graph(level)
-        #print(graph)
-        # Lấy vị trí hiện tại của pinkGhost và Pac-Man (tọa độ ô lưới)
-        current_pos = (self.center_x // 30, 30)
-        target_pos_begin = (15, 24)
-        target_pos = (player_x // 30, player_y //27)
-        #print("target_pos:", target_pos)
-        # Lấy nút bắt đầu và nút mục tiêu từ đồ thị
-        start_node = graph.get(current_pos)
-        target_node = graph.get(target_pos)
-        #print("Graph keys (nodes):", graph.keys())
-        #print(start_node,target_node)
+            if not pink_path:
+                pink_path = dfs(start_node, target_node)
 
 
-
-            
-    
-        print()
-        print(target_pos)
-        # Sử dụng DFS để tìm đường đi
-        path = dfs(start_node, target_node)
-        # if path:
-        #     print("Path found:")
-        #     for node in path:
-        #         print(f"({node.x}, {node.y})")
-        # else:
-        #     print("No path found.")
-        global  pinkGhost_index,pinkGhost_path
-
-        if(target_pos_begin == target_pos):
-            if(pinkGhost_index == 0):
-                pinkGhost_path = path
-                pinkGhost_index +=1
-            dx = pinkGhost_path[1].x -  pinkGhost_path[0].x  # Tính toán hướng di chuyển theo trục x
-            dy = pinkGhost_path[1].y -  pinkGhost_path[0].y  # Tính toán hướng di chuyển theo trục y
+            if len(pink_path) > 1 :
+                dx = pink_path[1].x -  pink_path[0].x  # Tính toán hướng di chuyển theo trục x
+                dy = pink_path[1].y -  pink_path[0].y  # Tính toán hướng di chuyển theo trục y
             # print(dx,dy,self.direction)
-            print(pinkGhost_path[0].x,pinkGhost_path[0].y,pinkGhost_path[1].x,pinkGhost_path[1].y)
-            # print("Path found:")
-            # for node in pinkGhost_path:
-            #     print(f"({node.x}, {node.y})")
-            # Cập nhật hướng di chuyển của pinkGhost
+            # print(path[0].x,path[0].y,path[1].x,path[1].y)
+            else:
+                pink_path = dfs(start_node, target_node)
+            if len(pink_path) > 1 :
+                dx = pink_path[1].x -  pink_path[0].x  # Tính toán hướng di chuyển theo trục x
+                dy = pink_path[1].y -  pink_path[0].y  # Tính toán hướng di chuyển theo trục y
+            #Cập nhật hướng di chuyển của pinkGhost
             if dx > 0:
                 self.direction = 0  # Phải
             elif dx < 0:
@@ -639,72 +600,38 @@ class Ghost:
                 self.y_pos -= self.speed
             elif self.direction == 3 and self.turns[3]:
                 self.y_pos += self.speed    
-            self.center_x = self.x_pos + 22
-            self.center_y = self.y_pos + 22
-            print (abs(self.center_x  - pinkGhost_path[1].x*30),abs(self.center_y - (pinkGhost_path[1].y*28+11)))
-            if abs(self.center_x  - pinkGhost_path[1].x*30) < 1 and abs(self.center_y - (pinkGhost_path[1].y*28+11)) < 1:
-                pinkGhost_path.pop(0)
+            self.center_x = self.x_pos + 15
+            self.center_y = self.y_pos + 15
+            print((self.x_pos,self.y_pos))
+            if  abs( self.x_pos  - pink_path[1].x*30) < 1 and abs(self.y_pos - (pink_path[1].y*30)) < 1:
+                pink_path.pop(0)   
 
-            
+            # Di chuyển pinkGhost theo hướng đã chọn
+            return self.x_pos, self.y_pos, self.direction
 
-        else:
-            if path:  # Nếu tìm thấy đường đi
-                # Lấy nút tiếp theo trong đường đi
-                if path[1]:
-                    dx = path[1].x -  path[0].x  # Tính toán hướng di chuyển theo trục x
-                    dy = path[1].y -  path[0].y  # Tính toán hướng di chuyển theo trục y
-                    print(dx,dy,self.direction)
-                    print(path[0].x,path[0].y,path[1].x,path[1].y)
-                    print("Path found:")
-                    for node in path:
-                        print(f"({node.x}, {node.y})")
-                    # Cập nhật hướng di chuyển của pinkGhost
-                    if dx > 0:
-                        self.direction = 0  # Phải
-                    elif dx < 0:
-                        self.direction = 1  # Trái
-                    elif dy < 0:
-                        self.direction = 2  # Lên
-                    elif dy > 0:
-                        self.direction = 3  # Xuống
-                    if self.direction == 0 and self.turns[0]:
-                        self.x_pos += self.speed
-                    elif self.direction == 1 and self.turns[1]:
-                        self.x_pos -= self.speed
-                    elif self.direction == 2 and self.turns[2]:
-                        self.y_pos -= self.speed
-                    elif self.direction == 3 and self.turns[3]:
-                        self.y_pos += self.speed    
-
-
-
-        # Di chuyển pinkGhost theo hướng đã chọn
-
-
-        return self.x_pos, self.y_pos, self.direction
 
 # Thông tin bổ sung giúp người chơi theo dõi trạng thái trò chơi
 def draw_misc():
     score_text = font.render(f'Score: {score}', True, 'white')
-    screen.blit(score_text, (10, 920))
+    screen.blit(score_text, (35, 940))
     if powerup:
-        pygame.draw.circle(screen, 'blue', (140, 930), 15)
-    for i in range(lives):
-        screen.blit(pygame.transform.scale(player_images[0], (30, 30)), (650 + i * 40, 915))
+        pygame.draw.circle(screen, 'blue', (130, 945), 7)
+    for i in range(lives+1):
+        screen.blit(pygame.transform.scale(player_images[0], (15, 15)), (650 + i * 20, 940))
     if game_over:
-        pygame.draw.rect(screen, 'white', [50, 200, 800, 300], 0, 10)
-        pygame.draw.rect(screen, 'dark gray', [70, 220, 760, 260], 0, 10)
+        pygame.draw.rect(screen, 'white', [50, 150, 800, 300], 0, 10)
+        pygame.draw.rect(screen, 'dark gray', [70, 170, 760, 260], 0, 10)
         gameover_text = font.render('Game over! Space bar to restart!', True, 'red')
-        screen.blit(gameover_text, (100, 300))
+        screen.blit(gameover_text, (325, 300))
     if game_won:
-        pygame.draw.rect(screen, 'white', [50, 200, 800, 300], 0, 10)
-        pygame.draw.rect(screen, 'dark gray', [70, 220, 760, 260], 0, 10)
+        pygame.draw.rect(screen, 'white', [50, 150, 800, 300], 0, 10)
+        pygame.draw.rect(screen, 'dark gray', [70, 215, 760, 260], 0, 10)
         gameover_text = font.render('Victory! Space bar to restart!', True, 'green')
-        screen.blit(gameover_text, (100, 300))
+        screen.blit(gameover_text, (325, 300))
 
 # Kiểm tra xem Pac-Man có "ăn" được vật phẩm nào trên bản đồ hay không
 def check_collisions(scor, power, power_count, eaten_ghosts):
-    num1 = (HEIGHT - 50) // 32  # check_collisions
+    num1 = 30   # check_collisions
     num2 = WIDTH // 30  # Chiều rộng mỗi ô trên lưới
     if 0 < player_x < 870:
         if level[center_y // num1][center_x // num2] == 1:  # Ăn thức ăn nhỏ
@@ -719,7 +646,7 @@ def check_collisions(scor, power, power_count, eaten_ghosts):
     return scor, power, power_count, eaten_ghosts  # Các giá trị này được gán lại cho các biến toàn cục trong vòng lặp chính
 
 def draw_board():
-    num1 = ((HEIGHT - 50) // 32)
+    num1 = ((HEIGHT - 50) // 30)
     num2 = (WIDTH // 30)
     for i in range(len(level)):
         for j in range(len(level[i])):
@@ -784,8 +711,8 @@ def draw_player():
 # Hàm này xác định các hướng mà Pac-Man được phép rẽ
 def check_position(centerx, centery):
     turns = [False, False, False, False]  # Đại diện cho khả năng rẽ ở 4 hướng (0 = phải, 1 = trái, 2 = lên, 3 = xuống)
-    num1 = (HEIGHT - 50) // 32
-    num2 = (WIDTH // 30)
+    num1 = 30
+    num2 = 30
     num3 = 15  # Khoảng cách kiểm tra (nửa chiều rộng ô, dùng để phát hiện tường trước khi Pac-Man chạm vào)
     if centerx // 30 < 29:  # Kiểm tra trong phạm vi bản đồ (0 - 28)
         if direction == 0:
@@ -829,6 +756,7 @@ def check_position(centerx, centery):
     return turns
 
 def move_player(play_x, play_y):
+\
     if current_level != 5 :  # Level 1,2,3,4,5: Pac-Man đứng yên
         return play_x, play_y
     else:  #Level 6 Pac-Man có thể di chuyển
@@ -997,19 +925,19 @@ def draw_game_elements():
     global center_x, center_y, player_circle
     screen.fill('black')
     draw_board()
-    center_x = player_x + 23
-    center_y = player_y + 24
-    # Vẽ một vòng tròn đen (bán kính 20, độ dày 2) để đại diện cho Pac-Man trong kiểm tra va chạm
-    player_circle = pygame.draw.circle(screen, 'black', (center_x, center_y), 20, 2)
+    center_x = player_x + 15
+    center_y = player_y + 15
+    # Vẽ một vòng tròn đen (bán kính 15, độ dày 1) để đại diện cho Pac-Man trong kiểm tra va chạm
+    player_circle = pygame.draw.circle(screen, 'black', (center_x, center_y), 15, 1)
     draw_player()
     draw_misc()
 
 # Di chuyển Pac-Man và các ghost
 def move_characters():
-    global player_x, player_y, redGhost_x, redGhost_y, redGhost_direction, blueGhost_x, blueGhost_y, blueGhost_direction
+    global player_x, player_y, redGhost_x, redGhost_y, redGhost_direction, blueGhost_x, blueGhost_y, blueGhost_direction,game_paused
     global pinkGhost_x, pinkGhost_y, pinkGhost_direction, orangeGhost_x, orangeGhost_y, orangeGhost_direction, turns_allowed
     turns_allowed = check_position(center_x, center_y)
-    if moving:
+    if moving and not game_paused:
         player_x, player_y = move_player(player_x, player_y)
         if current_level == 0:  # Level 1: Chỉ redGhost di chuyển
             if not redGhost_dead :
@@ -1048,30 +976,31 @@ def reset_game_state():
     powerup = False
     power_counter = 0
     player_x = 450
-    player_y = 663
+    player_y = 690
     direction = 0
     direction_command = 0
-    redGhost_x = 50
-    redGhost_y = 45
+    redGhost_x = 60
+    redGhost_y = 30
     redGhost_direction = 0
-    blueGhost_x = 802
-    blueGhost_y = 45
+    blueGhost_x = 810
+    blueGhost_y = 30
     blueGhost_direction = 2
-    pinkGhost_x = 50
-    pinkGhost_y = 829
+    pinkGhost_x = 60
+    pinkGhost_y = 870
     pinkGhost_direction = 2
-    orangeGhost_x = 802
-    orangeGhost_y = 829
+    orangeGhost_x = 810
+    orangeGhost_y = 870
     orangeGhost_direction = 2
     eaten_ghost = [False, False, False, False]
     redGhost_dead = False
     blueGhost_dead = False
     orangeGhost_dead = False
     pinkGhost_dead = False
+    level = copy.deepcopy(levels[current_level])
 
 # Xử lý va chạm giữa Pac-Man và ghost khi không có power-up
 def handle_ghost_collision_no_powerup():
-    global game_over, moving, startup_counter
+    global game_over, moving, startup_counter,game_paused
     if not powerup:
         if player_circle.colliderect(blueGhost.rect) and not blueGhost.dead or \
             player_circle.colliderect(pinkGhost.rect) and not pinkGhost.dead or \
@@ -1083,10 +1012,11 @@ def handle_ghost_collision_no_powerup():
                 game_over = True
                 moving = False
                 startup_counter = 0
+                game_paused = True  # Dừng mọi di chuyển
 
 # Xử lý va chạm giữa Pac-Man và ghost khi có power-up
 def handle_ghost_collision_powerup():
-    global game_over, moving, redGhost_dead, blueGhost_dead, pinkGhost_dead, orangeGhost_dead, eaten_ghost, score,startup_counter
+    global game_over, moving, redGhost_dead, blueGhost_dead, pinkGhost_dead, orangeGhost_dead, eaten_ghost, score,startup_counter,game_paused
     if powerup:
         if player_circle.colliderect(redGhost.rect):
             if eaten_ghost[0] and not redGhost.dead:
@@ -1096,6 +1026,7 @@ def handle_ghost_collision_powerup():
                     game_over = True
                     moving = False
                     startup_counter = 0
+                    game_paused = True  # Dừng mọi di chuyển
             elif not redGhost.dead and not eaten_ghost[0]:
                 redGhost_dead = True
                 eaten_ghost[0] = True
@@ -1108,6 +1039,7 @@ def handle_ghost_collision_powerup():
                     game_over = True
                     moving = False
                     startup_counter = 0
+                    game_paused = True  # Dừng mọi di chuyển
             elif not blueGhost.dead and not eaten_ghost[0]:
                 blueGhost_dead = True
                 eaten_ghost[0] = True
@@ -1120,6 +1052,7 @@ def handle_ghost_collision_powerup():
                     game_over = True
                     moving = False
                     startup_counter = 0
+                    game_paused = True  # Dừng mọi di chuyển
             elif not pinkGhost.dead and not eaten_ghost[0]:
                 pinkGhost_dead = True
                 eaten_ghost[0] = True
@@ -1132,17 +1065,33 @@ def handle_ghost_collision_powerup():
                     game_over = True
                     moving = False
                     startup_counter = 0
+                    game_paused = True  # Dừng mọi di chuyển
             elif not orangeGhost.dead and not eaten_ghost[0]:
                 orangeGhost_dead = True
                 eaten_ghost[0] = True
                 score += (2 ** eaten_ghost.count(True)) * 100
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Xử lý các sự kiện từ người chơi (phím nhấn, thoát game)
 def handle_events():
-    global run, direction_command, powerup, power_counter, lives, startup_counter, player_x, player_y, direction
+    global run, direction_command, powerup, power_counter, lives, startup_counter, player_x, player_y, direction,game_paused
     global redGhost_x, redGhost_y, redGhost_direction, blueGhost_x, blueGhost_y, blueGhost_direction, pinkGhost_x, pinkGhost_y, pinkGhost_direction
     global orangeGhost_x, orangeGhost_y, orangeGhost_direction, eaten_ghost, redGhost_dead, blueGhost_dead, orangeGhost_dead, pinkGhost_dead
-    global score, level, game_over, game_won
+    global score, level, game_over, game_won, current_level
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
@@ -1156,35 +1105,17 @@ def handle_events():
             if event.key == pygame.K_DOWN:
                 direction_command = 3
             if event.key == pygame.K_SPACE and (game_over or game_won):
-                powerup = False
-                power_counter = 0
-                lives = 3
-                startup_counter = 0
-                player_x = 450
-                player_y = 663
-                direction = 0
-                direction_command = 0
-                redGhost_x = 50
-                redGhost_y = 45
-                redGhost_direction = 0
-                blueGhost_x = 802
-                blueGhost_y = 45
-                blueGhost_direction = 2
-                pinkGhost_x = 50
-                pinkGhost_y = 829
-                pinkGhost_direction = 2
-                orangeGhost_x = 802
-                orangeGhost_y = 829
-                orangeGhost_direction = 2
-                eaten_ghost = [False, False, False, False]
-                redGhost_dead = False
-                blueGhost_dead = False
-                orangeGhost_dead = False
-                pinkGhost_dead = False
-                score = 0
+                current_level = show_menu()
                 level = copy.deepcopy(levels[current_level])
+                if current_level == 5:
+                    lives = 2
+                else:
+                    lives = 0
+                # Reset trạng thái trò chơi
+                reset_game_state()
                 game_over = False
                 game_won = False
+                game_paused = False
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_RIGHT and direction_command == 0:
                 direction_command = direction
@@ -1263,6 +1194,8 @@ def show_menu():
 # Gọi menu trước khi vào trò chơi
 current_level = show_menu()
 level = copy.deepcopy(levels[current_level])  # Gán level được chọn
+if ( current_level == 5):
+    lives = 2
 
 # Vòng lặp chính đã sửa
 run = True
@@ -1284,7 +1217,6 @@ while run:
     blueGhost = Ghost(blueGhost_x, blueGhost_y, targets[1], ghost_speeds[1], blueGhost_img, blueGhost_direction, blueGhost_dead, 2)
     pinkGhost = Ghost(pinkGhost_x, pinkGhost_y, targets[2], ghost_speeds[2], pinkGhost_img, pinkGhost_direction, pinkGhost_dead, 1)
     orangeGhost = Ghost(orangeGhost_x, orangeGhost_y, targets[3], ghost_speeds[3], orangeGhost_img, orangeGhost_direction, orangeGhost_dead, 3)
-    
     # Cập nhật targets sau khi tạo ghost
     targets = get_targets(redGhost_x, redGhost_y, blueGhost_x, blueGhost_y, pinkGhost_x, pinkGhost_y, orangeGhost_x, orangeGhost_y)
     
