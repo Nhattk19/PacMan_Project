@@ -66,6 +66,22 @@ blue_path = None
 red_path = None
 orange_path = None
 game_paused = False
+dx_change_count_orange = 0
+last_xpos_orange = 0
+last_ypos_orange = 0
+dy_change_count_orange = 0
+
+dx_change_count_red = 0
+last_xpos_red = 0
+last_ypos_red = 0
+dy_change_count_red = 0
+
+dx_change_count_blue = 0
+last_xpos_blue = 0
+last_ypos_blue = 0
+dy_change_count_blue = 0
+
+
 
 class Node:
     def __init__(self, x, y):
@@ -285,9 +301,6 @@ def ucs(start, target):
     return None
 
 
-
-
-
 class Ghost:
     def __init__(self, x_coord, y_coord, target, speed, img, direct, id):
         self.x_pos = x_coord
@@ -358,9 +371,36 @@ class Ghost:
             self.turns[0] = True
             self.turns[1] = True
         return self.turns
+    
+
+    def move_to_adjacent_cell(self, graph):
+        
+        #Di chuyển Red Ghost đến một ô bên cạnh (không phải là tường).
+        current_pos = (self.center_x // 30, self.center_y // 30)
+        adjacent_cells = [
+            (current_pos[0] + 1, current_pos[1]),  # Phải
+            (current_pos[0] - 1, current_pos[1]),  # Trái
+            (current_pos[0], current_pos[1] - 1),  # Lên
+            (current_pos[0], current_pos[1] + 1),  # Xuống
+        ]
+
+        # Lọc các ô bên cạnh không phải là tường
+        valid_cells = []
+        for cell in adjacent_cells:
+            if cell in graph and graph[cell].neighbors:  # Kiểm tra ô có thể đi qua
+                valid_cells.append(cell)
+
+        if valid_cells:
+            # Chọn một ô bên cạnh ngẫu nhiên
+            target_cell = random.choice(valid_cells)
+            self.x_pos = target_cell[0] * 30
+            self.y_pos = target_cell[1] * 30
+            self.center_x = self.x_pos + 15
+            self.center_y = self.y_pos + 15
+
 
     def move_orangeGhost(self):
-        global player_x, player_y, current_level, orange_path
+        global player_x, player_y, current_level, orange_path,last_xpos_orange,dx_change_count_orange,last_ypos_orange,dy_change_count_orange
 
         # Xây dựng đồ thị từ bản đồ
         graph = build_graph(level)
@@ -373,12 +413,26 @@ class Ghost:
         start_node = graph.get(current_pos)
         target_node = graph.get(target_pos)
 
-        # Sử dụng UCS để tìm đường đi
-        if not orange_path or len(orange_path) <= 2 :
-            orange_path = ucs(start_node, target_node)  # Sử dụng UCS thay vì DFS, BFS hoặc A*
-        
-        # Nếu không tìm thấy đường đi, dừng di chuyển
+
+        other_ghosts = [redGhost, blueGhost, pinkGhost]  # Danh sách các ghost khác
+        for ghost in other_ghosts:
+            ghost_pos = (ghost.center_x // 30, ghost.center_y // 30)
+            if ghost_pos in graph:
+                # Đánh dấu ô này là không thể đi qua (giống như tường)
+                graph[ghost_pos].neighbors = []  # Xóa tất cả các liên kết của nút này
+        other_ghosts = [blueGhost, pinkGhost]
+        for ghost in other_ghosts:
+            if (self.center_x // 30 == ghost.center_x // 30) and (self.center_y // 30 == ghost.center_y // 30):
+                self.move_to_adjacent_cell(graph)
+                return self.x_pos, self.y_pos, self.direction
+
         if not orange_path:
+            orange_path = ucs(start_node, target_node)
+
+        if ((self.center_x+15) % 30 == 0 and (self.center_y+15) % 30 == 0):
+            orange_path = ucs(start_node, target_node)  # Sử dụng UCS 
+
+        if orange_path is None:
             return self.x_pos, self.y_pos, self.direction
 
         # Lấy nút tiếp theo trong đường đi
@@ -390,7 +444,34 @@ class Ghost:
             # Nếu chỉ còn 1 nút (đến đích), tính toán lại đường đi
             orange_path = ucs(start_node, target_node)
             dx, dy = 0, 0  # Tạm thời không di chuyển
+        if orange_path is None:
+            return self.x_pos, self.y_pos, self.direction
 
+
+        if self.x_pos != last_xpos_orange:
+                dx_change_count_orange += 1
+        else:
+                dx_change_count_orange = 0
+        last_xpos_orange = self.x_pos
+
+        if dx_change_count_orange >= 2 and self.y_pos % 30 != 0:
+            # Làm tròn dy về bội số gần nhất của 30
+            self.y_pos = round(self.y_pos / 30) * 30
+
+
+
+        if self.y_pos != last_ypos_orange:
+                dy_change_count_orange += 1
+        else:
+                dy_change_count_orange = 0
+        last_ypos_orange = self.y_pos
+
+
+        if dy_change_count_orange >= 2 and self.x_pos % 30 != 0:
+            # Làm tròn dy về bội số gần nhất của 30
+            self.x_pos = round(self.x_pos / 30) * 30
+
+  
 
         # Cập nhật hướng di chuyển của Pink Ghost
         if dx > 0:
@@ -412,18 +493,19 @@ class Ghost:
         elif self.direction == 3 and self.turns[3]:
             self.y_pos += self.speed
 
+
         # Cập nhật tọa độ trung tâm của Pink Ghost
         self.center_x = self.x_pos + 15
         self.center_y = self.y_pos + 15
 
         # Kiểm tra nếu Pink Ghost đã đến nút tiếp theo
-        if len(orange_path) > 1 and abs(self.x_pos - orange_path[1].x * 30) < 1 and abs(self.y_pos - orange_path[1].y * 30) < 1:
+        if  len(orange_path) > 1 and abs(self.x_pos - orange_path[1].x * 30) < 1 and abs(self.y_pos - orange_path[1].y * 30) < 1:
             orange_path.pop(0)  # Loại bỏ nút đã đi qua
-
         return self.x_pos, self.y_pos, self.direction
     
     def move_redGhost(self):
-        global player_x, player_y, current_level, red_path
+        global player_x, player_y, current_level, red_path,last_xpos_red,dx_change_count_red,last_ypos_red,dy_change_count_red
+
 
         # Xây dựng đồ thị từ bản đồ
         graph = build_graph(level)
@@ -436,11 +518,30 @@ class Ghost:
         start_node = graph.get(current_pos)
         target_node = graph.get(target_pos)
 
+        other_ghosts = [orangeGhost, blueGhost, pinkGhost]  # Danh sách các ghost khác
+        for ghost in other_ghosts:
+            ghost_pos = (ghost.center_x // 30, ghost.center_y // 30)
+            if ghost_pos in graph:
+                # Đánh dấu ô này là không thể đi qua (giống như tường)
+                graph[ghost_pos].neighbors = []  # Xóa tất cả các liên kết của nút này
+
+        for ghost in other_ghosts:
+            if (self.center_x // 30 == ghost.center_x // 30) and (self.center_y // 30 == ghost.center_y // 30):
+                self.move_to_adjacent_cell(graph)
+                return self.x_pos, self.y_pos, self.direction
+
+
         # Sử dụng A* để tìm đường đi
-        if not red_path or len(red_path) <= 2:
-            red_path = a_star(start_node, target_node)  # Sử dụng A* thay vì DFS hoặc BFS
+        if not red_path :
+            red_path = a_star(start_node, target_node)  # Sử dụng A*
+
+        if ((self.center_x+15) % 30 == 0 and (self.center_y+15) % 30 == 0) :
+            red_path = a_star(start_node, target_node)
 
         # Lấy nút tiếp theo trong đường đi
+        if red_path is None:
+            return self.x_pos, self.y_pos, self.direction
+        
         if len(red_path) > 1:
             next_node = red_path[1]
             dx = next_node.x - red_path[0].x  # Tính toán hướng di chuyển theo trục x
@@ -449,6 +550,33 @@ class Ghost:
             # Nếu chỉ còn 1 nút (đến đích), tính toán lại đường đi
             red_path = a_star(start_node, target_node)
             dx, dy = 0, 0  # Tạm thời không di chuyển
+
+        if red_path is None:
+            return self.x_pos, self.y_pos, self.direction
+
+        if self.x_pos != last_xpos_red:
+                dx_change_count_red += 1
+        else:
+                dx_change_count_red = 0
+        last_xpos_red = self.x_pos
+
+        if dx_change_count_red >= 2 and self.y_pos % 30 != 0:
+            # Làm tròn dy về bội số gần nhất của 30
+            self.y_pos = round(self.y_pos / 30) * 30
+
+
+
+        if self.y_pos != last_ypos_red:
+                dy_change_count_red += 1
+        else:
+                dy_change_count_red = 0
+        last_ypos_red = self.y_pos
+
+        if dy_change_count_red >= 2 and self.x_pos % 30 != 0:
+            # Làm tròn dy về bội số gần nhất của 30
+            self.x_pos = round(self.x_pos / 30) * 30
+
+
 
         # Cập nhật hướng di chuyển của Pink Ghost
         if dx > 0:
@@ -480,8 +608,10 @@ class Ghost:
 
         return self.x_pos, self.y_pos, self.direction
 
+
+
     def move_blueGhost(self):
-        global player_x, player_y, current_level, blue_path
+        global player_x, player_y, current_level, blue_path,last_xpos_blue,dx_change_count_blue,last_ypos_blue,dy_change_count_blue
 
         # Xây dựng đồ thị từ bản đồ
         graph = build_graph(level)
@@ -494,10 +624,28 @@ class Ghost:
         start_node = graph.get(current_pos)
         target_node = graph.get(target_pos)
 
+
+        other_ghosts = [redGhost, orangeGhost, pinkGhost]  # Danh sách các ghost khác
+        for ghost in other_ghosts:
+            ghost_pos = (ghost.center_x // 30, ghost.center_y // 30)
+            if ghost_pos in graph:
+                # Đánh dấu ô này là không thể đi qua (giống như tường)
+                graph[ghost_pos].neighbors = []  # Xóa tất cả các liên kết của nút này
+        other_ghosts = [pinkGhost]
+        for ghost in other_ghosts:
+            if (self.center_x // 30 == ghost.center_x // 30) and (self.center_y // 30 == ghost.center_y // 30):
+                self.move_to_adjacent_cell(graph)
+                return self.x_pos, self.y_pos, self.direction
+
         # Sử dụng BFS để tìm đường đi
-        if not blue_path or len(blue_path) <= 2:
+        if not blue_path:
             blue_path = bfs(start_node, target_node) 
 
+        if ((self.center_x+15) % 30 == 0 and (self.center_y+15) % 30 == 0):
+            blue_path = bfs(start_node, target_node) 
+
+        if blue_path is None:
+            return self.x_pos, self.y_pos, self.direction
         # Lấy nút tiếp theo trong đường đi
         if len(blue_path) > 1:
             next_node = blue_path[1]
@@ -507,6 +655,30 @@ class Ghost:
             # Nếu chỉ còn 1 nút (đến đích), tính toán lại đường đi
             blue_path = bfs(start_node, target_node)
             dx, dy = 0, 0  # Tạm thời không di chuyển
+        if blue_path is None:
+            return self.x_pos, self.y_pos, self.direction
+
+        if self.x_pos != last_xpos_blue:
+                dx_change_count_blue += 1
+        else:
+                dx_change_count_blue = 0
+        last_xpos_blue = self.x_pos
+
+        if dx_change_count_blue >= 2 and self.y_pos % 30 != 0:
+            # Làm tròn dy về bội số gần nhất của 30
+            self.y_pos = round(self.y_pos / 30) * 30
+
+
+
+        if self.y_pos != last_ypos_blue:
+                dy_change_count_blue += 1
+        else:
+                dy_change_count_blue = 0
+        last_ypos_blue = self.y_pos
+
+        if dy_change_count_blue >= 2 and self.x_pos % 30 != 0:
+            # Làm tròn dy về bội số gần nhất của 30
+            self.x_pos = round(self.x_pos / 30) * 30
 
         # Cập nhật hướng di chuyển của Pink Ghost
         if dx > 0:
@@ -552,7 +724,7 @@ class Ghost:
             target_node = graph.get(target_pos)
             # Sử dụng DFS để tìm đường đi
 
-            if not pink_path:
+            if not pink_path or len(pink_path) <= 1:
                 pink_path = dfs(start_node, target_node)
 
             if len(pink_path) > 1 :
@@ -891,11 +1063,11 @@ def reset_game_state():
             redGhost_y = 870
     if current_level == 1:
         if lives == 4:
+            pinkGhost_x = 810
+            pinkGhost_y = 870
+        elif lives == 3:
             pinkGhost_x = 60
             pinkGhost_y = 450
-        elif lives == 3:
-            pinkGhost_x = 810
-            pinkGhost_y = 30
         elif lives == 2:
             pinkGhost_x = 450
             pinkGhost_y = 150
@@ -918,7 +1090,7 @@ def reset_game_state():
     if current_level == 3:
         if lives == 4:
             orangeGhost_x = 810
-            orangeGhost_y = 30
+            orangeGhost_y = 870
         elif lives == 3:
             orangeGhost_x = 60
             orangeGhost_y = 450
@@ -971,10 +1143,26 @@ def handle_events():
                 level = copy.deepcopy(levels[current_level])
                 if(current_level == 5):
                     lives = 3
+                elif current_level ==4:
+                    lives = 1
                 else:
                     lives = 5
+
                 # Reset trạng thái trò chơi
                 reset_game_state()
+                if lives == 5:
+                    if current_level == 0:
+                        redGhost_x = 60
+                        redGhost_y = 30
+                    if current_level == 1:
+                        pinkGhost_x = 60
+                        pinkGhost_y = 30      
+                    if current_level == 2:
+                        blueGhost_x = 60
+                        blueGhost_y = 30 
+                    if current_level == 3:
+                        orangeGhost_x = 60
+                        orangeGhost_y = 30 
                 if current_level != 5:
                     level = [[0 if cell == 1 else cell for cell in row] for row in level]
                 game_over = False
@@ -1078,10 +1266,30 @@ def show_menu():
 # Gọi menu trước khi vào trò chơi
 current_level = show_menu()
 level = copy.deepcopy(levels[current_level])  # Gán level được chọn
+
+if lives == 5:
+    if current_level == 0:
+        redGhost_x = 60
+        redGhost_y = 30
+    if current_level == 1:
+        pinkGhost_x = 60
+        pinkGhost_y = 30      
+    if current_level == 2:
+        blueGhost_x = 60
+        blueGhost_y = 30 
+    if current_level == 3:
+        orangeGhost_x = 60
+        orangeGhost_y = 30 
+
+
+
 if ( current_level != 5):
     level = [[0 if cell == 1 else cell for cell in row] for row in level]
+    if current_level == 4:
+        lives = 1
 else :
     lives = 3
+
 
 # Vòng lặp chính đã sửa
 run = True
@@ -1100,7 +1308,6 @@ while run:
 
     if(current_level == 5):
         check_game_won()
-    print(lives)
     # Cập nhật sự kiện và hướng trước khi vẽ hoặc di chuyển
     handle_events()
     update_player_direction()
@@ -1114,7 +1321,7 @@ while run:
     orangeGhost = Ghost(orangeGhost_x, orangeGhost_y, targets[3], ghost_speeds[3], orangeGhost_img, orangeGhost_direction, 3)
     # Cập nhật targets sau khi tạo ghost
     targets = get_targets(redGhost_x, redGhost_y, blueGhost_x, blueGhost_y, pinkGhost_x, pinkGhost_y, orangeGhost_x, orangeGhost_y)
-    
+
     # Di chuyển nhân vật
     move_characters()
     
