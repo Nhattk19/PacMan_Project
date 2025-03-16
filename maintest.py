@@ -1100,6 +1100,35 @@ def reset_game_state():
         elif lives == 1:
             orangeGhost_x = 450
             orangeGhost_y = 870
+    if current_level == 0:
+        pinkGhost_x = 450
+        pinkGhost_y = 490    
+        blueGhost_x = 450
+        blueGhost_y = 490   
+        orangeGhost_x = 450
+        orangeGhost_y = 490
+    elif current_level == 1:
+        redGhost_x = 450
+        redGhost_y = 490    
+        blueGhost_x = 450
+        blueGhost_y = 490   
+        orangeGhost_x = 450
+        orangeGhost_y = 490
+    elif current_level == 2:
+        redGhost_x = 450
+        redGhost_y = 490    
+        pinkGhost_x = 450
+        pinkGhost_y = 490   
+        orangeGhost_x = 450
+        orangeGhost_y = 490
+    elif current_level == 3:
+        redGhost_x = 450
+        redGhost_y = 490    
+        pinkGhost_x = 450
+        pinkGhost_y = 490   
+        blueGhost_x = 450
+        blueGhost_y = 490
+
 
 
 
